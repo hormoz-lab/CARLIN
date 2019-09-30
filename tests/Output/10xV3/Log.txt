@@ -1,0 +1,39 @@
+Writing log to temporary location: C:\Users\Duluxan\AppData\Local\Temp\tpd2bebf7c_b4cc_4fbf_978e_72a2c36ad7d6.txt
+Parsing CFG file: sc10xV3.json
+Parsing CB reference list C:\Users\Duluxan\Documents\PhD\DFCI\utils\CARLIN\cfg/10xV3_barcodes.txt
+6794880 CBs in reference list
+Parsing FASTQ files: C:\Users\Duluxan\Documents\PhD\DFCI\utils\CARLIN\tests/data/10xV3_R1.fastq.gz, C:\Users\Duluxan\Documents\PhD\DFCI\utils\CARLIN\tests/data/10xV3_R2.fastq.gz
+Unzipping FASTQ file to: C:\Users\Duluxan\AppData\Local\Temp\tp4669fc15_85f3_4a63_b50b_10b102441304/10xV3_R1.fastq
+Unzipping FASTQ file to: C:\Users\Duluxan\AppData\Local\Temp\tpe19afc7c_779c_44e4_a6b3_6e452f26f7a0/10xV3_R2.fastq
+Reads in FASTQ: 100000
+Removing unzipped FASTQ file: C:\Users\Duluxan\AppData\Local\Temp\tp4669fc15_85f3_4a63_b50b_10b102441304/10xV3_R1.fastq
+Removing unzipped FASTQ file: C:\Users\Duluxan\AppData\Local\Temp\tpe19afc7c_779c_44e4_a6b3_6e452f26f7a0/10xV3_R2.fastq
+Analyzing SC CBs and UMIs
+From 100000 reads, found good (L_QC,L_CB,L_UMI,QC,no N CB,no N UMI,all) (100000,100000,100000,85892,100000,100000,85892) times
+Trimming CARLIN sequences from reads
+From 100000 reads, found (CARLIN,5,3,control,structure,long,AGCT,all) sequences (97363,90143,100000,89846,84382,84235,84382,84235) times
+Merging filters
+From 100000 reads, found valid (provenance,sequence,both) reads (85892,84235,74033) times
+Creating aligned CARLIN store with 8103 sequences
+Sanitizing prefix/postfix of aligned sequences in depot
+...reduced sequence diversity from 8103 to 8099
+Sanitizing conserved regions of aligned sequences in depot
+...reduced sequence diversity from 8099 to 2075
+Building CB collection from FastQ with 2934 CBs
+Denoising CB collection
+...(2827/2934) MiSEQ CBs matched to (2412/6794880) reference CBs
+Denoising UMIs
+Computing thresholds for CB collection
+...(18,2,1,1,10,NaN,18) reads for (99th pctl/10,max_cells,equal,seq_err,min,override,final)
+...1306 common CBs
+...(7,2,0,1,10,NaN,10) reads for (99th pctl/10,max_molecules,equal,seq_err,min,override,final)
+...2597 common UMIs
+Calling alleles for CB collection
+...1289 CBs callable
+Generating report for SC experiment
+Saving results...259/1289 tags edited, 83 alleles
+Generating results file
+Generating allele plot
+Generating diagnostic plot
+Generating warnings file
+Pipeline completed in 374.396 seconds
