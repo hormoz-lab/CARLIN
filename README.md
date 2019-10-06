@@ -117,7 +117,8 @@ The entry point to the pipeline is the analyze_CARLIN function.
 
     analyze_CARLIN(..., 'ref_CB_file', file) uses the reference list of 
     cell barcodes in the specified file when denoising barcodes found in the 
-    FastQ files. This reference list is typically produced by the software
+    FastQ files. Each barcode should be on a separate line in the reference 
+    list. This reference list is typically produced by the software
     used to process the corresponding transcriptome run. Defaults to the full
     barcode list in the single-cell platform specified by CFG_TYPE. 
     Specifying a reference list is much more accurate than using this full 

@@ -22,17 +22,17 @@ function params = get_parameters(cfg)
         
         if (strcmp(cfg.SC.Platform, 'InDrops'))            
             if (cfg.SC.Version==2)
-                addParameter(params, 'ref_CB_file', sprintf('%s/InDropsV2_barcodes.txt', folder));
+                addParameter(params, 'ref_CB_file', sprintf('%s/InDropsV2_barcodes.txt.gz', folder));
             elseif (cfg.SC.Version==3)
-                addParameter(params, 'ref_CB_file', sprintf('%s/InDropsV3_barcodes.txt', folder));
+                addParameter(params, 'ref_CB_file', sprintf('%s/InDropsV3_barcodes.txt.gz', folder));
             else
                 error('Unsupported InDrops version');
             end
         elseif (strcmp(cfg.SC.Platform, '10x'))
             if (cfg.SC.Version==2)
-                addParameter(params, 'ref_CB_file', sprintf('%s/10xV2_barcodes.txt', folder));            
+                addParameter(params, 'ref_CB_file', sprintf('%s/10xV2_barcodes.txt.gz', folder));            
             elseif (cfg.SC.Version==3)
-                addParameter(params, 'ref_CB_file', sprintf('%s/10xV3_barcodes.txt', folder));
+                addParameter(params, 'ref_CB_file', sprintf('%s/10xV3_barcodes.txt.gz', folder));
             else
                 error('Unsupported 10x version');
             end
