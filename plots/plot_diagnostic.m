@@ -22,27 +22,30 @@ function suspect_alleles = plot_diagnostic(cfg, FQ, aligned, tag_collection_deno
         [is, where] = ismember(dat.CB_raw, k);
         dat.CB(is) = v(where(is));
         
-        [is, which_UMI] = ismember(vertcat(summary.allele_colony{:}), FQ.UMI);
-        assert(all(is));
-        which_UMI = mat2cell(which_UMI, cellfun(@length, summary.allele_colony));
+        if (size(summary.alleles,1)>0)
         
-        [is, where_in_collection] = ismember(vertcat(summary.allele_colony{:}), {tag_collection_denoised.UMIs.UMI}');
-        assert(all(is));
-        where_in_collection = mat2cell(where_in_collection, cellfun(@length, summary.allele_colony));
-        
-        [is, where_in_called] = ismember(vertcat(summary.allele_colony{:}), {tag_called_allele.UMI}');
-        assert(all(is));
-        where_in_called = mat2cell(where_in_called, cellfun(@length, summary.allele_colony));
-        
-        for i = 1:size(summary.alleles,1)
-            for j = 1:size(summary.allele_colony{i})                
-                which_SEQ = tag_collection_denoised.UMIs(where_in_collection{i}(j)).SEQ_ind(...
-                            tag_called_allele(where_in_called{i}(j)).constituents);
-                how_much = tag_collection_denoised.UMIs(where_in_collection{i}(j)).SEQ_weight(...
-                           tag_called_allele(where_in_called{i}(j)).constituents);
-                dat.allele((dat.CB==which_UMI{i}(j)) & ismember(dat.sequence,which_SEQ)) = i;
-                dat.allele_eventual(dat.CB==which_UMI{i}(j)) = i;
-                assert(sum((dat.CB==which_UMI{i}(j)) & ismember(dat.sequence,which_SEQ))==sum(how_much));
+            [is, which_UMI] = ismember(vertcat(summary.allele_colony{:}), FQ.UMI);
+            assert(all(is));
+            which_UMI = mat2cell(which_UMI, cellfun(@length, summary.allele_colony));
+
+            [is, where_in_collection] = ismember(vertcat(summary.allele_colony{:}), {tag_collection_denoised.UMIs.UMI}');
+            assert(all(is));
+            where_in_collection = mat2cell(where_in_collection, cellfun(@length, summary.allele_colony));
+
+            [is, where_in_called] = ismember(vertcat(summary.allele_colony{:}), {tag_called_allele.UMI}');
+            assert(all(is));
+            where_in_called = mat2cell(where_in_called, cellfun(@length, summary.allele_colony));
+
+            for i = 1:size(summary.alleles,1)
+                for j = 1:size(summary.allele_colony{i})                
+                    which_SEQ = tag_collection_denoised.UMIs(where_in_collection{i}(j)).SEQ_ind(...
+                                tag_called_allele(where_in_called{i}(j)).constituents);
+                    how_much = tag_collection_denoised.UMIs(where_in_collection{i}(j)).SEQ_weight(...
+                               tag_called_allele(where_in_called{i}(j)).constituents);
+                    dat.allele((dat.CB==which_UMI{i}(j)) & ismember(dat.sequence,which_SEQ)) = i;
+                    dat.allele_eventual(dat.CB==which_UMI{i}(j)) = i;
+                    assert(sum((dat.CB==which_UMI{i}(j)) & ismember(dat.sequence,which_SEQ))==sum(how_much));
+                end
             end
         end
         assert(all(dat.allele_eventual(dat.allele>0)==dat.allele(dat.allele>0)));
@@ -130,7 +133,11 @@ function suspect_alleles = plot_diagnostic(cfg, FQ, aligned, tag_collection_deno
     else
         cutoff = find(v>=thresholds.CB.chosen, 1, 'last');
     end
-    assert(cutoff == summary.N.common_tags);
+    if (isempty(cutoff))
+        cutoff = 1;
+    else
+        assert(cutoff == summary.N.common_tags);
+    end
    
     fig = figure('units','normalized','outerposition',[0 0 1 1]);
     set(fig,'defaultAxesColorOrder',[[0, 0, 0]; [0, 0, 0]]);
@@ -267,7 +274,11 @@ function sp = length_distribution(Nr, Nc, which_sp, FQ, summary, type)
     end
     L_valid_norm = accumarray(cellfun(@length, FQ.SEQ_valid)+1, accumarray(nonzeros(valid_read_deduped(:,1)), 1));
     
-    L_cell_norm  = accumarray(cellfun(@(x) length(degap(x.get_seq)), summary.alleles)+1, summary.allele_freqs);
+    if (~isempty(summary.alleles))
+        L_cell_norm  = accumarray(cellfun(@(x) length(degap(x.get_seq)), summary.alleles)+1, summary.allele_freqs);
+    else
+        L_cell_norm = [];
+    end
     
     L_raw_read     = L_raw_read     / sum(L_raw_read);
     L_raw_norm     = L_raw_norm     / sum(L_raw_norm);
@@ -324,7 +335,11 @@ function sp = UMI_composition_all(Nr, Nc, which_sp, FQ, summary)
     selector = intersect(selector, FQ.masks.valid_SEQ_structure);
     hm_trimmed   = seqprofile(FQ.UMI(FQ.read_UMI(selector)), 'Alphabet', 'NT');
     hm_valid = seqprofile(FQ.UMI(FQ.read_UMI(FQ.masks.valid_lines)), 'Alphabet', 'NT');
-    hm_cell  = seqprofile(vertcat(summary.allele_colony{:}), 'Alphabet', 'NT');
+    if (~isempty(summary.allele_colony))
+        hm_cell  = seqprofile(vertcat(summary.allele_colony{:}), 'Alphabet', 'NT');
+    else
+        hm_cell  = zeros(4, size(hm_all,2));
+    end
 
     hm       = cumsum([hm_all; hm_trimmed; hm_valid; hm_cell], 1, 'reverse');
 
@@ -413,11 +428,13 @@ function sp = UMI_composition_by_allele(Nr, Nc, which_sp, summary)
     N = size(hm, 2);
 
     sp = subplot(Nr,Nc,which_sp);
-
-    bar(1:N, hm(1,:), 'blue', 'BarWidth', 0.99);   hold on;
-    bar(1:N, hm(2,:), 'green', 'BarWidth', 0.99);
-    bar(1:N, hm(3,:), 'yellow', 'BarWidth', 0.99);
-    bar(1:N, hm(4,:), 'red', 'BarWidth', 0.99);    hold off;
+    
+    if (N>0)
+        bar(1:N, hm(1,:), 'blue', 'BarWidth', 0.99);   hold on;
+        bar(1:N, hm(2,:), 'green', 'BarWidth', 0.99);
+        bar(1:N, hm(3,:), 'yellow', 'BarWidth', 0.99);
+        bar(1:N, hm(4,:), 'red', 'BarWidth', 0.99);    hold off;
+    end
     set(gca,'YAxisLocation', 'right', 'Ytick', [0.125:0.25:1.0], 'Yticklabels', {'T'; 'G'; 'C'; 'A'}, 'Xtick', []);
     axis tight; box on;
 
@@ -659,56 +676,71 @@ end
 function [sp, suspect_alleles] = distance_by_allele(Nr, Nc, which_sp, dat, FQ, aligned, summary, type)
 
     if (strcmp(type, 'UMI'))
-        L = length(summary.allele_colony{1}{1});
-        hm = cellfun(@(x) histcounts(seqpdist(x, 'Method', 'p-distance', 'Alphabet', 'NT', 'UseParallel', true)*L,...
-                                     -0.5:1.0:L+0.5)', summary.allele_colony, 'un', false);
-        hm = horzcat(hm{:});
-        hm = hm./sum(hm,1);
-        hm(isnan(hm)) = 0;
         
-        suspect_alleles = find(sum(hm(1:2,:),1) >= 0.1);
-
         sp = subplot(Nr,Nc,which_sp);
+        
+        if (~isempty(summary.allele_colony))
+            L = length(summary.allele_colony{1}{1});
+            hm = cellfun(@(x) histcounts(seqpdist(x, 'Method', 'p-distance', 'Alphabet', 'NT', 'UseParallel', true)*L,...
+                                         -0.5:1.0:L+0.5)', summary.allele_colony, 'un', false);
+            hm = horzcat(hm{:});
+            hm = hm./sum(hm,1);
+            hm(isnan(hm)) = 0;
+
+            suspect_alleles = find(sum(hm(1:2,:),1) >= 0.1);            
+        else
+            hm = 1;
+            suspect_alleles = [];
+        end
         imagesc(1-hm); colormap gray; caxis([0, 1]); grid on;
         set(gca,'YDir','normal', 'Yticklabels', [], 'Xtick', []);
     else
-        dedup = unique([dat.allele(dat.allele>0) dat.CB(dat.allele>0) dat.UMI(dat.allele>0)], 'rows');
-    
-        CB1 = cellfun(@(y) cellfun(@(x) x(1:end-8), y, 'un', false), summary.allele_colony, 'un', false);
-        maxlen = max(cellfun(@(x) max(cellfun(@length, x)), CB1));
-        CB1 = cellfun(@(x) pad(x, maxlen, 'left', '-'), CB1, 'un', false);
-        CB2 = cellfun(@(y) cellfun(@(x) x(end-7:end), y, 'un', false), summary.allele_colony, 'un', false);
-        UMI = arrayfun(@(i) FQ.UMI(dedup(dedup(:,1)==i,3)), [1:size(summary.allele_colony,1)]', 'un', false);
         
-        hm1 = cellfun(@(x) histcounts(seqpdist(x, 'Method', 'p-distance', 'Alphabet', 'NT')*maxlen,-0.5:1.0:maxlen+0.5)', ...
-                          CB1, 'un', false);
-        hm1 = horzcat(hm1{:});
-        hm1 = hm1./sum(hm1,1);
-        hm1(isnan(hm1)) = 0;
-        
-        hm2 = cellfun(@(x) histcounts(seqpdist(x, 'Method', 'p-distance', 'Alphabet', 'NT')*8,-0.5:1.0:8+0.5)', ...
-                          CB2, 'un', false);
-        hm2 = horzcat(hm2{:});
-        hm2 = hm2./sum(hm2,1);
-        hm2(isnan(hm2)) = 0;
-        
-        L_UMI = length(UMI{1}{1});
-        hm3 = cellfun(@(x) histcounts(seqpdist(x, 'Method', 'p-distance', 'Alphabet', 'NT')*L_UMI,-0.5:1.0:L_UMI+0.5)', ...
-                          UMI, 'un', false);
-        hm3 = horzcat(hm3{:});
-        hm3 = hm3./sum(hm3,1);
-        hm3(isnan(hm3)) = 0;
-        
-        suspect_alleles = find(sum(hm1(1:2,:),1)>=0.1 | sum(hm2(1:2,:),1)>=0.1 | sum(hm3(1:2,:))>=0.1);
-        
-        hm = [hm1; hm2; hm3];
         sp = subplot(Nr,Nc,which_sp);
         
-        imagesc(1-hm); colormap gray; caxis([0, 1]); grid on; hold on;
-        patch([0.5, 0.5, size(hm,2)+0.5 size(hm,2)+0.5], ...
-              [maxlen+2-0.5 maxlen+2+8+0.5 maxlen+2+8+0.5 maxlen+2-0.5], ...
-              'yellow', 'FaceAlpha', 0.2, 'EdgeColor', 'yellow');
-        hold off;
+        if (~isempty(summary.allele_colony))
+            dedup = unique([dat.allele(dat.allele>0) dat.CB(dat.allele>0) dat.UMI(dat.allele>0)], 'rows');
+
+            CB1 = cellfun(@(y) cellfun(@(x) x(1:end-8), y, 'un', false), summary.allele_colony, 'un', false);
+            maxlen = max(cellfun(@(x) max(cellfun(@length, x)), CB1));
+            CB1 = cellfun(@(x) pad(x, maxlen, 'left', '-'), CB1, 'un', false);
+            CB2 = cellfun(@(y) cellfun(@(x) x(end-7:end), y, 'un', false), summary.allele_colony, 'un', false);
+            UMI = arrayfun(@(i) FQ.UMI(dedup(dedup(:,1)==i,3)), [1:size(summary.allele_colony,1)]', 'un', false);
+
+            hm1 = cellfun(@(x) histcounts(seqpdist(x, 'Method', 'p-distance', 'Alphabet', 'NT')*maxlen,-0.5:1.0:maxlen+0.5)', ...
+                              CB1, 'un', false);
+            hm1 = horzcat(hm1{:});
+            hm1 = hm1./sum(hm1,1);
+            hm1(isnan(hm1)) = 0;
+
+            hm2 = cellfun(@(x) histcounts(seqpdist(x, 'Method', 'p-distance', 'Alphabet', 'NT')*8,-0.5:1.0:8+0.5)', ...
+                              CB2, 'un', false);
+            hm2 = horzcat(hm2{:});
+            hm2 = hm2./sum(hm2,1);
+            hm2(isnan(hm2)) = 0;
+
+            L_UMI = length(UMI{1}{1});
+            hm3 = cellfun(@(x) histcounts(seqpdist(x, 'Method', 'p-distance', 'Alphabet', 'NT')*L_UMI,-0.5:1.0:L_UMI+0.5)', ...
+                              UMI, 'un', false);
+            hm3 = horzcat(hm3{:});
+            hm3 = hm3./sum(hm3,1);
+            hm3(isnan(hm3)) = 0;
+
+            suspect_alleles = find(sum(hm1(1:2,:),1)>=0.1 | sum(hm2(1:2,:),1)>=0.1 | sum(hm3(1:2,:))>=0.1);
+
+            hm = [hm1; hm2; hm3];
+
+            imagesc(1-hm); colormap gray; caxis([0, 1]); grid on; hold on;
+            patch([0.5, 0.5, size(hm,2)+0.5 size(hm,2)+0.5], ...
+                  [maxlen+2-0.5 maxlen+2+8+0.5 maxlen+2+8+0.5 maxlen+2-0.5], ...
+                  'yellow', 'FaceAlpha', 0.2, 'EdgeColor', 'yellow');
+            hold off;
+            
+        else
+            hm = 1;
+            suspect_alleles = [];
+            imagesc(1-hm); colormap gray; caxis([0, 1]); grid on; hold on;
+        end
         set(gca,'YDir','normal', 'Yticklabels', [], 'Xtick', []);
      
     end

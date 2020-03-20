@@ -174,20 +174,28 @@ classdef Mutation
             end
         end
 
-        function ToFile(mut_list, folder, filename)            
-            if (isa(mut_list{1}, 'AlignedSEQ'))
-                mut_list = cellfun(@(x) Mutation.identify_Cas9_events(x), mut_list, 'un', false);                
-            end
+        function ToFile(mut_list, folder, filename)
+            
             if (~exist(folder, 'dir'))
                 mkdir(folder);        
             end
-            s = cellfun(@(x) arrayfun(@(i) x(i).annotate(true), [1:size(x,1)], 'un', false), mut_list, 'un', false);
-            s = cellfun(@(x) strjoin(x,','), s, 'un', false);
-            s(cellfun(@isempty, s)) = {'[]'};
+            
             fid = fopen([folder '/' filename], 'wt');
-            fprintf(fid, '%s\n', s{1:end-1});
-            fprintf(fid, '%s', s{end});
+            
+            if (~isempty(mut_list))            
+                if (isa(mut_list{1}, 'AlignedSEQ'))
+                    mut_list = cellfun(@(x) Mutation.identify_Cas9_events(x), mut_list, 'un', false);                
+                end
+                s = cellfun(@(x) arrayfun(@(i) x(i).annotate(true), [1:size(x,1)], 'un', false), mut_list, 'un', false);
+                s = cellfun(@(x) strjoin(x,','), s, 'un', false);
+                s(cellfun(@isempty, s)) = {'[]'};
+
+                fprintf(fid, '%s\n', s{1:end-1});
+                fprintf(fid, '%s', s{end});
+            end
+            
             fclose(fid);
+            
         end
         
         m = make_compound_mutation(s, e, in_seq, ref_seq);

@@ -4,14 +4,16 @@ The CARLIN pipeline calls alleles from sequencing runs of the CARLIN amplicon. I
 
 ## Citation
 
-Please cite the companion paper if you use this software package:
+Please cite the [companion paper](https://www.biorxiv.org/content/10.1101/797597v1) if you use this software package:
 
 > S. Bowling, D. Sritharan, F. G. Osorio, M. Nguyen, P. Cheung, 
-A. Rodiguez-Fraticelli, S. Patel, Y. Fujiwara, B. Li, S. Orkin, 
+A. Rodiguez-Fraticelli, S. Patel, Y. Fujiwara, B. E. Li, S. H. Orkin, 
 S. Hormoz, F. D. Camargo. "An engineered CRISPR/Cas9 mouse line for 
 simultaneous readout of lineage histories and gene expression profiles 
-in single cells."  
+in single cells." bioRxiv (2019): 797597. https://doi.org/10.1101/797597 
 >
+
+To reproduce all the results and figures from the paper, please [visit the paper repository](https://gitlab.com/hormozlab/Cell_2020_carlin).
 
 ## Download
 
@@ -29,6 +31,20 @@ Install the CARLIN software by opening MATLAB, and running the following command
 >> cd(CODE_PATH);
 >> install_CARLIN;
 ```
+
+If you are installing on your local machine, you should additionally save the path.
+
+```MATLAB
+>> savepath;
+```
+
+If you are installing on a cluster machine, the MATLAB path file will be read-only, so you will have to re-run the following command at the start of each session to set up paths:
+
+```MATLAB
+>> addpath(genpath(CODE_PATH));
+```
+
+You should also re-run the installation when you pull new changes from git.
 
 ## Usage
 
@@ -85,7 +101,7 @@ The entry point to the pipeline is the analyze_CARLIN function.
     but the cutoff used in practice will generally be higher.
 
     analyze_CARLIN(..., 'read_override_UMI_denoised', cutoff) short circuits
-    the cutoff function, and sets this value to the cutoff. All UMIs with a
+    the cutoff function, and sets the threshold to 'cutoff'. All UMIs with a
     read count >= 'read_override_UMI_denoised' will be asked to call an allele. 
     Default is unset.
 
@@ -111,18 +127,20 @@ The entry point to the pipeline is the analyze_CARLIN function.
     but the cutoff used in practice will generally be higher.
 
     analyze_CARLIN(..., 'read_override_CB_denoised', cutoff) short circuits
-    the cutoff function, and sets this value to the cutoff. All CBs with a
+    the cutoff function, and sets the threshold to 'cutoff'. All CBs with a
     read count >= 'read_override_CB_denoised' will be asked to call an allele. 
     Default is unset.
 
     analyze_CARLIN(..., 'ref_CB_file', file) uses the reference list of 
-    cell barcodes in the specified file when denoising barcodes found in the 
-    FastQ files. Each barcode should be on a separate line in the reference 
-    list. This reference list is typically produced by the software
-    used to process the corresponding transcriptome run. Defaults to the full
-    barcode list in the single-cell platform specified by CFG_TYPE. 
-    Specifying a reference list is much more accurate than using this full 
-    barcode list.
+    cell barcodes in the file specified by 'ref_CB_file' when denoising 
+    barcodes found in the FastQ files. The reference list should have one 
+    cell barcode per line. Each cell barcode should be a string consisting 
+    of only the characters {A,C,G,T}. The length of the barcode should match
+    the length expected by the platform specified by CFG_TYPE. This reference
+    list is typically produced by the software used to process the 
+    corresponding transcriptome run. Defaults to the full barcode list in 
+    the single-cell platform specified by CFG_TYPE. Specifying a reference
+    list leads to more accurate denoising than using the full barcode list.
 
     Examples:
 
@@ -247,6 +265,71 @@ You can compute the two p-values described in Methods as shown:
 
 The output in each case is a vector with elements corresponding to the alleles in `summary.alleles`.
 
+## Create a Custom Bank
+
+To create a custom bank characterizing the null distribution of allele frequencies for your own protocol, [download CatchAll](http://www.northeastern.edu/catchall/downloads.html) and copy the full path (including binary name) into:
+
+	CODE_PATH/@Bank/CatchAllPath.txt
+
+Run the following code to create a `bank` object from pooling three libraries (saved in directories `Mouse1`, `Mouse2`, and `Mouse3`), each processed separately using the CARLIN pipeline, and save the result in `MyCustomBank/Bank.mat`:
+
+```MATLAB
+>> mouse1 = load('Mouse1/Summary.mat');
+>> mouse2 = load('Mouse2/Summary.mat');
+>> mouse3 = load('Mouse3/Summary.mat');
+>> bank = Bank.Create([mouse1.summary; mouse2.summary; mouse3.summary], {'Mouse1'; 'Mouse2'; 'Mouse3'}, 'MyCustomBank');
+```
+
+## Work with Mutations
+
+A CARLIN allele is stored as two aligned strings - a sequence and a reference. To view the alignment of the fifth most common allele in the experiment:
+
+```MATLAB
+>> [summary.alleles{5}.get_seq; summary.alleles{5}.get_ref]
+  
+    ans =
+
+      2×276 char array
+    
+        'CGCCGGACTGCACGACAGTCGACGATGGAGTCGACACGACTCGCGCATA------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------CGATGGGAGCT'
+        'CGCCGGACTGCACGACAGTCGACGATGGAGTCGACACGACTCGCGCATACGATGGAGTCGACTACAGTCGCTACGACGATGGAGTCGCGAGCGCTATGAGCGACTATGGAGTCGATACGATACGCGCACGCTATGGAGTCGAGAGCGCGCTCGTCGACTATGGAGTCGCGACTGTACGCACACGCGATGGAGTCGATAGTATGCGTACACGCGATGGAGTCGAGTCGAGACGCTGACGATATGGAGTCGATACGTAGCACGCAGACGATGGGAGCT'
+```
+
+To retrieve a list of mutations called from a set of alleles, and inspect the second mutation in the thirteenth allele:
+
+```MATLAB
+>> mut_list = cellfun(@Mutation.identify_Cas9_events, summary.alleles, 'un', false);
+>> mut_list{13}(2)
+
+    ans = 
+    
+      Mutation with properties:
+    
+             type: 'D'
+        loc_start: 263
+          loc_end: 266
+          seq_new: '----'
+          seq_old: 'AGAC'
+
+>> mut_list{13}(2).annotate()
+
+    ans =
+
+        '263_266del'        
+```
+
+To output a list of mutations to a text file in HGVS format as shown in AlleleAnnotations.txt:
+
+```MATLAB
+>> Mutation.ToFile(mut_list, 'output_path', 'mootations.txt');
+```
+
+To construct CARLIN alleles from a list of mutations specified in HGVS format like AlleleAnnotations.txt:
+
+```MATLAB
+>>> alleles = cellfun(@Mutation.apply_mutations, Mutation.FromFile('dootations.txt'), 'un', false);
+```
+
 ## Visualization
 
 This package also includes a few standard visualizations, that will produce figures like those shown in the paper. They all take an `ExperimentSummary` object as input. 
@@ -281,7 +364,7 @@ Visualize the editing patterns in more detail:
 ```
 <p align=center><img src="doc/Stargate.png" width="300"></p>
 
-## Debugging
+## Troubleshooting
 
 If you're running into issues, check if the CARLIN pipeline runs properly on test datasets on your installation.
 
@@ -290,4 +373,6 @@ If you're running into issues, check if the CARLIN pipeline runs properly on tes
 >> runtests;
 ```
 
-There are also examples in `tests/CARLIN_pipeline_test.m`, to check if your invocation is correct. 
+There are also examples in `tests/CARLIN_pipeline_test.m`, to check if your invocation is correct. For other examples of how the code is used, please [visit the paper repository](https://gitlab.com/hormozlab/Cell_2020_carlin).
+
+#### Prepared By: Duluxan Sritharan

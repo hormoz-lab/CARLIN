@@ -13,30 +13,41 @@ classdef ExperimentSummary
             % makes sure results are updated, and makes sure that the same
             % sequence always provides the same allele regardless of
             % alignment.
-
-            if (isa(alleles{1}, 'AlignedSEQ'))
-                alleles = cellfun(@(x) degap(x.get_seq), alleles, 'un', false);
-            else
-                alleles = cellfun(@(x) degap(x), alleles, 'un', false);
-            end
             
-            if (nargin == 1)
-                [alleles, ~, obj.allele_freqs] = unique_by_freq(alleles);
-                obj.allele_freqs = accumarray(obj.allele_freqs,1);
-            else
-                if (nargin == 2)
-                    preserve_order = false;
+            if (size(alleles,1) == 0)
+                
+                if (nargin > 1)
+                    assert(size(allele_freqs,1)==0);
                 end
-                assert(size(alleles,1) == size(allele_freqs,1));
-                if (issorted(allele_freqs,'descend') || preserve_order)
-                    obj.allele_freqs = allele_freqs;
+                obj.alleles = {};
+                obj.allele_freqs = [];
+                
+            else
+
+                if (isa(alleles{1}, 'AlignedSEQ'))
+                    alleles = cellfun(@(x) degap(x.get_seq), alleles, 'un', false);
                 else
-                    [obj.allele_freqs, idx] = sort(allele_freqs, 'descend');
-                    alleles = alleles(idx);
-                end 
+                    alleles = cellfun(@(x) degap(x), alleles, 'un', false);
+                end
+
+                if (nargin == 1)
+                    [alleles, ~, obj.allele_freqs] = unique_by_freq(alleles);
+                    obj.allele_freqs = accumarray(obj.allele_freqs,1);
+                else
+                    if (nargin == 2)
+                        preserve_order = false;
+                    end
+                    assert(size(alleles,1) == size(allele_freqs,1));
+                    if (issorted(allele_freqs,'descend') || preserve_order)
+                        obj.allele_freqs = allele_freqs;
+                    else
+                        [obj.allele_freqs, idx] = sort(allele_freqs, 'descend');
+                        alleles = alleles(idx);
+                    end 
+                end
+
+                [~, obj.alleles] = cellfun(@(x) CARLIN_def.cas9_align(x), alleles, 'un', false);
             end
-            
-            [~, obj.alleles] = cellfun(@(x) CARLIN_def.cas9_align(x), alleles, 'un', false);
             
         end
         
@@ -49,7 +60,6 @@ classdef ExperimentSummary
             assert(isa(samples, 'ExperimentSummary'));
             if (size(samples,1)==1)                
                 obj = ExperimentSummary(samples.alleles, samples.allele_freqs);
-%                 obj = samples;
                 sample_map = {[1:length(obj.alleles)]'};
                 allele_breakdown_by_sample = samples.allele_freqs;
                 return;

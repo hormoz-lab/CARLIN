@@ -3,7 +3,7 @@ function sp = plot_allele_frequency_CDF(summary, title_str)
     assert(isa(summary, 'ExperimentSummary'));
     
     fig_width  = 10.8;
-    fig_height = 4.0;
+    fig_height = 3.0;
     figure('Units', 'centimeters', 'Position', [0, 0, fig_width, fig_height], ...
            'PaperUnits', 'centimeters', 'PaperSize', [fig_width, fig_height]);        
     sp = subplot(1,1,1);

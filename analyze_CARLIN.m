@@ -46,7 +46,7 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 %   but the cutoff used in practice will generally be higher.
 %
 %   analyze_CARLIN(..., 'read_override_UMI_denoised', cutoff) short circuits
-%   the cutoff function, and sets this value to the cutoff. All UMIs with a
+%   the cutoff function, and sets the threshold to 'cutoff'. All UMIs with a
 %   read count >= 'read_override_UMI_denoised' will be asked to call an allele. 
 %   Default is unset.
 %
@@ -72,18 +72,20 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 %   but the cutoff used in practice will generally be higher.
 %
 %   analyze_CARLIN(..., 'read_override_CB_denoised', cutoff) short circuits
-%   the cutoff function, and sets this value to the cutoff. All CBs with a
+%   the cutoff function, and sets the threshold to 'cutoff'. All CBs with a
 %   read count >= 'read_override_CB_denoised' will be asked to call an allele. 
 %   Default is unset.
 %
 %   analyze_CARLIN(..., 'ref_CB_file', file) uses the reference list of 
-%   cell barcodes in the specified file when denoising barcodes found in the 
-%   FastQ files. Each barcode should be on a separate line in the reference 
-%   list. This reference list is typically produced by the software
-%   used to process the corresponding transcriptome run. Defaults to the full
-%   barcode list in the single-cell platform specified by CFG_TYPE. 
-%   Specifying a reference list is much more accurate than using this full 
-%   barcode list.
+%   cell barcodes in the file specified by 'ref_CB_file' when denoising 
+%   barcodes found in the FastQ files. The reference list should have one 
+%   cell barcode per line. Each cell barcode should be a string consisting 
+%   of only the characters {A,C,G,T}. The length of the barcode should match
+%   the length expected by the platform specified by CFG_TYPE. This reference
+%   list is typically produced by the software used to process the 
+%   corresponding transcriptome run. Defaults to the full barcode list in 
+%   the single-cell platform specified by CFG_TYPE. Specifying a reference
+%   list leads to more accurate denoising than using the full barcode list.
 %
 %   Examples:
 %
@@ -103,12 +105,12 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 %                      'ref_CB_file', 'tenx/transcriptome/filtered_barcodes_umi_mt.txt');
 % 
 %   If you use this code, please cite:
-% 
+%
 %   S. Bowling, D. Sritharan, F. G. Osorio, M. Nguyen, P. Cheung, 
-%   A. Rodiguez-Fraticelli, S. Patel, Y. Fujiwara, B. Li, S. Orkin, 
+%   A. Rodiguez-Fraticelli, S. Patel, Y. Fujiwara, B. E. Li, S. H. Orkin, 
 %   S. Hormoz, F. D. Camargo. "An engineered CRISPR/Cas9 mouse line for 
 %   simultaneous readout of lineage histories and gene expression profiles 
-%   in single cells."  
+%   in single cells." bioRxiv (2019): 797597. https://doi.org/10.1101/797597 
 %
 %   Author: Duluxan Sritharan. Hormoz Lab. Harvard Medical School.
 

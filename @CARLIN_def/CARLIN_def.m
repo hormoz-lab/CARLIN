@@ -64,12 +64,12 @@ classdef (Sealed) CARLIN_def < handle
             obj.seq.prefix   = obj.prefix;
             obj.seq.postfix  = obj.postfix;
             obj.seq.pam      = obj.pam;
-            obj.seq.segments = obj.segments;            
+            obj.seq.segments = obj.segments([1:obj.N.segments]);
             temp = cell(obj.N.segments+obj.N.pams+2,1);
-            temp(1) = cellstr(obj.prefix);
-            temp(2:2:end) = obj.segments;
-            temp(3:2:end-1) = cellstr(obj.pam);
-            temp(end) = cellstr(obj.postfix);
+            temp(1) = cellstr(obj.seq.prefix);
+            temp(2:2:end) = obj.seq.segments;
+            temp(3:2:end-1) = cellstr(obj.seq.pam);
+            temp(end) = cellstr(obj.seq.postfix);
             obj.seq.CARLIN = horzcat(temp{:});
             
             % Precompute widths
@@ -86,8 +86,8 @@ classdef (Sealed) CARLIN_def < handle
             obj.width.min_length = obj.width.prefix+obj.width.consite+obj.width.postfix;
             
             % Define custom sequences
-            obj.seq.consites = cellfun(@(x) x(1:obj.width.consite), obj.segments, 'un', false);
-            obj.seq.cutsites = cellfun(@(x) x(obj.width.consite+1:end), obj.segments, 'un', false);
+            obj.seq.consites = cellfun(@(x) x(1:obj.width.consite), obj.seq.segments, 'un', false);
+            obj.seq.cutsites = cellfun(@(x) x(obj.width.consite+1:end), obj.seq.segments, 'un', false);
            
             % Define endpoints of different elements
             temp = cumsum(cellfun(@length, temp));
@@ -142,11 +142,11 @@ classdef (Sealed) CARLIN_def < handle
             obj.alpha.CARLIN(obj.bps.pam)     = obj.alpha.pam;
             obj.alpha.CARLIN(obj.bps.postfix) = obj.alpha.postfix;
             
-            % Empirically derived NUC44 alignment scores thresholds to determine
+            % Empirically derived NUC44 alignment score thresholds to determine
             % a successful match.
             obj.match_score.Primer5   = 15;
             obj.match_score.Primer3   = 20;
-            obj.match_score.SecondarySequence = 30;            
+            obj.match_score.SecondarySequence = 30;
             
             open_penalty = cell(obj.N.motifs,1);
             open_penalty(obj.motifs.prefix )  = {10*ones(1, obj.width.prefix)};

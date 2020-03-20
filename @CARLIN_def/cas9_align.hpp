@@ -9,10 +9,10 @@
  * If you use this code, please cite:
  * 
  * S. Bowling, D. Sritharan, F. G. Osorio, M. Nguyen, P. Cheung, 
- * A. Rodiguez-Fraticelli, S. Patel, Y. Fujiwara, B. Li, S. Orkin, 
+ * A. Rodiguez-Fraticelli, S. Patel, Y. Fujiwara, B. E. Li, S. H. Orkin, 
  * S. Hormoz, F. D. Camargo. "An engineered CRISPR/Cas9 mouse line for 
  * simultaneous readout of lineage histories and gene expression profiles 
- * in single cells."  
+ * in single cells." bioRxiv (2019): 797597. https://doi.org/10.1101/797597 
  *
  * Five Inputs:
  *
