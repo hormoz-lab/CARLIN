@@ -4,13 +4,13 @@ The CARLIN pipeline calls alleles from sequencing runs of the CARLIN amplicon. I
 
 ## Citation
 
-Please cite the [companion paper](https://www.biorxiv.org/content/10.1101/797597v1) if you use this software package:
+Please cite the [companion paper](https://doi.org/10.1016/j.cell.2020.04.048) if you use this software package:
 
 > S. Bowling, D. Sritharan, F. G. Osorio, M. Nguyen, P. Cheung, 
-A. Rodiguez-Fraticelli, S. Patel, Y. Fujiwara, B. E. Li, S. H. Orkin, 
-S. Hormoz, F. D. Camargo. "An engineered CRISPR/Cas9 mouse line for 
-simultaneous readout of lineage histories and gene expression profiles 
-in single cells." bioRxiv (2019): 797597. https://doi.org/10.1101/797597 
+A. Rodiguez-Fraticelli, S. Patel, W-C. Yuan, Y. Fujiwara, B. E. Li, S. H. Orkin, 
+S. Hormoz, F. D. Camargo. "An Engineered CRISPR-Cas9 Mouse Line for 
+Simultaneous Readout of Lineage Histories and Gene Expression Profiles 
+in Single Cells." Cell (2020), https://doi.org/10.1016/j.cell.2020.04.048
 >
 
 To reproduce all the results and figures from the paper, please [visit the paper repository](https://gitlab.com/hormozlab/Cell_2020_carlin).
@@ -327,7 +327,7 @@ To output a list of mutations to a text file in HGVS format as shown in AlleleAn
 To construct CARLIN alleles from a list of mutations specified in HGVS format like AlleleAnnotations.txt:
 
 ```MATLAB
->>> alleles = cellfun(@Mutation.apply_mutations, Mutation.FromFile('dootations.txt'), 'un', false);
+>> alleles = cellfun(@Mutation.apply_mutations, Mutation.FromFile('dootations.txt'), 'un', false);
 ```
 
 ## Visualization
