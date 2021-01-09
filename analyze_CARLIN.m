@@ -55,7 +55,7 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 %   analyze_CARLIN(..., 'max_molecules', N) considers (at most) the N denoised
 %   UMIs with the most reads, for calling alleles. For CFG_TYPE='BulkDNA',
 %   N is the number of cells in the sample. For CFG_TYPE='BulkRNA', N is the 
-%   number of transcripts (if unsure, 10x the number of cells is suitable
+%   number of transcripts (if unsure, 10x the number of cells is a suitable
 %   guess). Default is inf.
 %   
 %   For single-cell sequencing runs of the CARLIN amplicon (CFG_TYPE='sc*'):
@@ -63,7 +63,8 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 %   analyze_CARLIN(..., 'max_cells', N) considers (at most) the N denoised
 %   cell barcodes with the most reads, for calling alleles. Defaults to 
 %   the number of possible CBs in the single-cell platform specified by
-%   CFG_TYPE.
+%   CFG_TYPE, or the number of elements in 'ref_CB_file' (see below), if
+%   specified.
 %
 %   analyze_CARLIN(..., 'read_cutoff_CB_denoised', cutoff) uses a minimum
 %   read threshold of 'cutoff' when attempting to call alleles from denoised 
@@ -106,8 +107,8 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 % 
 %   If you use this code, please cite:
 %
-%   S. Bowling, D. Sritharan, F. G. Osorio, M. Nguyen, P. Cheung, 
-%   A. Rodiguez-Fraticelli, S. Patel, W-C. Yuan, Y. Fujiwara, B. E. Li, S. H. Orkin, 
+%   S. Bowling*, D. Sritharan*, F. G. Osorio, M. Nguyen, P. Cheung, 
+%   A. Rodriguez-Fraticelli, S. Patel, W-C. Yuan, Y. Fujiwara, B. E. Li, S. H. Orkin, 
 %   S. Hormoz, F. D. Camargo. "An Engineered CRISPR-Cas9 Mouse Line for 
 %   Simultaneous Readout of Lineage Histories and Gene Expression Profiles 
 %   in Single Cells." Cell (2020), https://doi.org/10.1016/j.cell.2020.04.048

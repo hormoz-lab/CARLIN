@@ -6,12 +6,11 @@ The CARLIN pipeline calls alleles from sequencing runs of the CARLIN amplicon. I
 
 Please cite the [companion paper](https://doi.org/10.1016/j.cell.2020.04.048) if you use this software package:
 
-> S. Bowling, D. Sritharan, F. G. Osorio, M. Nguyen, P. Cheung, 
-A. Rodiguez-Fraticelli, S. Patel, W-C. Yuan, Y. Fujiwara, B. E. Li, S. H. Orkin, 
+> S. Bowling*, D. Sritharan*, F. G. Osorio, M. Nguyen, P. Cheung, 
+A. Rodriguez-Fraticelli, S. Patel, W-C. Yuan, Y. Fujiwara, B. E. Li, S. H. Orkin, 
 S. Hormoz, F. D. Camargo. "An Engineered CRISPR-Cas9 Mouse Line for 
 Simultaneous Readout of Lineage Histories and Gene Expression Profiles 
 in Single Cells." Cell (2020), https://doi.org/10.1016/j.cell.2020.04.048
->
 
 To reproduce all the results and figures from the paper, please [visit the paper repository](https://gitlab.com/hormozlab/Cell_2020_carlin).
 
@@ -110,7 +109,7 @@ The entry point to the pipeline is the analyze_CARLIN function.
     analyze_CARLIN(..., 'max_molecules', N) considers (at most) the N denoised
     UMIs with the most reads, for calling alleles. For CFG_TYPE='BulkDNA',
     N is the number of cells in the sample. For CFG_TYPE='BulkRNA', N is the 
-    number of transcripts (if unsure, 10x the number of cells is suitable
+    number of transcripts (if unsure, 10x the number of cells is a suitable
     guess). Default is inf.
     
     For single-cell sequencing runs of the CARLIN amplicon (CFG_TYPE='sc*'):
@@ -118,7 +117,8 @@ The entry point to the pipeline is the analyze_CARLIN function.
     analyze_CARLIN(..., 'max_cells', N) considers (at most) the N denoised
     cell barcodes with the most reads, for calling alleles. Defaults to 
     the number of possible CBs in the single-cell platform specified by
-    CFG_TYPE.
+    CFG_TYPE, or the number of elements in 'ref_CB_file' (see below), if
+    specified.
 
     analyze_CARLIN(..., 'read_cutoff_CB_denoised', cutoff) uses a minimum
     read threshold of 'cutoff' when attempting to call alleles from denoised 
@@ -247,12 +247,28 @@ $ cat Warnings.txt
 
     For allele(s) 1, >10% of CB halves or UMIs differ pairwise by only 1bp. This may indicate that that the cell count for these alleles is artificially inflated. This is likely because of QC issues on the CB/UMI reads. This is a known issue with InDrops.
 
+## ExperimentSummary Object
+
+Each run of the CARLIN pipeline produces an `ExperimentSummary` or `ExperimentReport` object saved in `Summary.mat` called `summary`. This is the only file needed for most common downstream analyses. The field `summary.alleles` contains a list of called CARLIN alleles sorted in descending order according to `summary.allele_freqs`, which indicates how many UMIs (for bulk experiments) or CBs (for single-cell experiments), each allele is found in.
+
+## Analyzing Data Across Multiple Experiments
+
+`ExperimentSummary` objects from separate experiments can be merged to analyze how alleles are shared across the experiments:
+
+```MATLAB
+>> mouse1 = load('Mouse1/Summary.mat');
+>> mouse2 = load('Mouse2/Summary.mat');
+>> mouse3 = load('Mouse3/Summary.mat');
+>> [merged, sample_map, allele_breakdown_by_sample] = ExperimentSummary.FromMerge([mouse1.summary; mouse2.summary; mouse3.summary]);
+```
+
+`merged` is a new `ExperimentSummary` object that can be handled in the usual way for assessing statistical significance of alleles or preparing visualizations (see below). `sample_map{j}(i)` indicates which allele in `merged` corresponds to allele `i` in experiment `j`. `allele_breakdown_by_sample(i,j)` indicates how many times allele `i` in `merged` appeared in experiment `j`.
 
 ## Statistical Significance of Alleles
 
 A main contribution of the CARLIN paper is to quantify the statistical significance of alleles (see Methods). Cas9 editing does not generate all alleles with equal probability - those with complex editing patterns are more rare. The more common alleles are more likely to coincidentally mark multiple progenitors, and are therefore less useful for lineage tracing. Alleles that should be rare but are abundant in a particular experiment are statistically significant. 
 
-Statistical significance is determined by comparing the observed frequency of an allele in an experiment, with the expected frequency. The observed frequency is stored in `summary.allele_freqs`, where `summary` is an `ExperimentSummary` object saved in `Summary.mat`. The expected frequency distribution can be determined by using the allele bank, (stored in the `bank` variable of `Bank.mat`), which is the same bank used in Figure 3 of the paper.
+Statistical significance is determined by comparing the observed frequency of an allele in an experiment, with the expected frequency. The observed frequency is stored in `summary.allele_freqs`. The expected frequency distribution can be determined by using the allele bank, (stored in the `Bank` variable of `Bank.mat`), which is the same bank used in Figure 3 of the paper.
 
 You can compute the two p-values described in Methods as shown:
 
@@ -271,7 +287,7 @@ To create a custom bank characterizing the null distribution of allele frequenci
 
 	CODE_PATH/@Bank/CatchAllPath.txt
 
-Run the following code to create a `bank` object from pooling three libraries (saved in directories `Mouse1`, `Mouse2`, and `Mouse3`), each processed separately using the CARLIN pipeline, and save the result in `MyCustomBank/Bank.mat`:
+Run the following code to create a `Bank` object from pooling three libraries (saved in directories `Mouse1`, `Mouse2`, and `Mouse3`), each processed separately using the CARLIN pipeline, and save the result in `MyCustomBank/Bank.mat`:
 
 ```MATLAB
 >> mouse1 = load('Mouse1/Summary.mat');
