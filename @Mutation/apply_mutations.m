@@ -1,6 +1,6 @@
-function mutated_allele = apply_mutations(event_list)
+function mutated_allele = apply_mutations(CARLIN_def, event_list)
     
-    ref = CARLIN_def.getInstance.seq.CARLIN;
+    ref = CARLIN_def.seq.CARLIN;
     seq = ref;
     offset = 0;
     

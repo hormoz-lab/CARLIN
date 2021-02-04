@@ -2,39 +2,50 @@ function tests = CARLIN_pipeline_test
     tests = functiontests(localfunctions);
 end
 
-function test_CARLIN_pipeline_DNA(testCase)
+function test_OriginalCARLIN_pipeline_DNA(testCase)
     check_CARLIN_pipeline_bulk(testCase, 'DNA')
 end
 
-function test_CARLIN_pipeline_RNA(testCase)
+function test_OriginalCARLIN_pipeline_RNA(testCase)
     check_CARLIN_pipeline_bulk(testCase, 'RNA')
 end
 
-function test_CARLIN_pipeline_InDropsV2(testCase)    
+function test_OriginalCARLIN_pipeline_InDropsV2(testCase)    
     check_CARLIN_pipeline_InDrops(testCase, 2)
 end
 
-function test_CARLIN_pipeline_InDropsV3(testCase)    
+function test_OriginalCARLIN_pipeline_InDropsV3(testCase)    
     check_CARLIN_pipeline_InDrops(testCase, 3)
 end
 
-function test_CARLIN_pipeline_10xV2(testCase)
+function test_OriginalCARLIN_pipeline_10xV2(testCase)
     check_CARLIN_pipeline_10x(testCase, 2)
 end
 
-function test_CARLIN_pipeline_10xV3(testCase)
+function test_OriginalCARLIN_pipeline_10xV3(testCase)
     check_CARLIN_pipeline_10x(testCase, 3)
 end
 
-function check_CARLIN_pipeline_bulk(testCase, bulk_type)    
+function test_TigreCARLIN_pipeline_10xV3(testCase)
+    check_CARLIN_pipeline_10x(testCase, 3, 'TigreCARLIN')
+end
+
+function check_CARLIN_pipeline_bulk(testCase, bulk_type, amplicon)
+    if (nargin == 2)
+        amplicon = 'OriginalCARLIN';
+    end
     [folder, ~, ~] = fileparts(mfilename('fullpath'));  
     cfg_type = sprintf('Bulk%s', bulk_type);
-    out_path = sprintf('%s/Output/%s', folder, cfg_type);
+    out_path = sprintf('%s/Output/%s/%s', folder, amplicon, cfg_type);
     if (exist(out_path, 'dir')==7)
         rmdir(out_path, 's');
     end
-    fastq_file = sprintf('%s/data/%s.fastq.gz', folder, cfg_type);    
-    verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path));
+    fastq_file = sprintf('%s/data/%s/%s.fastq.gz', folder, amplicon, cfg_type);
+    if (isequal(amplicon, 'OriginalCARLIN'))
+        verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path));
+    else
+        verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path, 'CARLIN_amplicon', amplicon));
+    end
     check_all_files(testCase, out_path);
     gunzip(sprintf('%s/Analysis.mat.gz', out_path));
     load(sprintf('%s/Analysis.mat', out_path));
@@ -44,31 +55,45 @@ function check_CARLIN_pipeline_bulk(testCase, bulk_type)
     check_plaintext_results(testCase, summary, out_path);
 end
 
-function check_CARLIN_pipeline_InDrops(testCase, version)
+function check_CARLIN_pipeline_InDrops(testCase, version, amplicon)
+    if (nargin == 2)
+        amplicon = 'OriginalCARLIN';
+    end
     [folder, ~, ~] = fileparts(mfilename('fullpath'));
     cfg_type = sprintf('scInDropsV%d', version);    
-    out_path = sprintf('%s/Output/%s', folder, cfg_type);
+    out_path = sprintf('%s/Output/%s/%s', folder, amplicon, cfg_type);
     if (exist(out_path, 'dir')==7)
         rmdir(out_path, 's');
     end
-    fastq_file = sprintf('%s/data/InDropsV%d.fastq.gz', folder, version);
-    verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path));
+    fastq_file = sprintf('%s/data/%s/InDropsV%d.fastq.gz', folder, amplicon, version);
+    if (isequal(amplicon, 'OriginalCARLIN'))
+        verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path));
+    else
+        verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path, 'CARLIN_amplicon', amplicon));
+    end
     check_all_files(testCase, out_path);
     gunzip(sprintf('%s/Analysis.mat.gz', out_path));
     load(sprintf('%s/Analysis.mat', out_path), 'FQ', 'cfg');
     check_sc_FQ(testCase, FQ, fastq_file, cfg);
 end
 
-function check_CARLIN_pipeline_10x(testCase, version)
+function check_CARLIN_pipeline_10x(testCase, version, amplicon)
+    if (nargin == 2)
+        amplicon = 'OriginalCARLIN';
+    end
     [folder, ~, ~] = fileparts(mfilename('fullpath'));
     cfg_type = sprintf('sc10xV%d', version);
-    out_path = sprintf('%s/Output/%s', folder, cfg_type);
+    out_path = sprintf('%s/Output/%s/%s', folder, amplicon, cfg_type);
     if (exist(out_path, 'dir')==7)
         rmdir(out_path, 's');
     end
-    fastq_file = {sprintf('%s/data/10xV%d_R1.fastq.gz', folder, version), ...
-                  sprintf('%s/data/10xV%d_R2.fastq.gz', folder, version)};
-    verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path));
+    fastq_file = {sprintf('%s/data/%s/10xV%d_R1.fastq.gz', folder, amplicon, version), ...
+                  sprintf('%s/data/%s/10xV%d_R2.fastq.gz', folder, amplicon, version)};
+    if (isequal(amplicon, 'OriginalCARLIN'))
+        verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path));
+    else
+        verifyWarningFree(testCase, @() analyze_CARLIN(fastq_file, cfg_type, out_path, 'CARLIN_amplicon', amplicon));
+    end
     gunzip(sprintf('%s/Analysis.mat.gz', out_path));
     check_all_files(testCase, out_path);
     load(sprintf('%s/Analysis.mat', out_path), 'FQ', 'cfg');
@@ -146,9 +171,9 @@ function check_bulk_collection(testCase, FQ, tag_collection, UMI_map)
 end
 
 function check_plaintext_results(testCase, summary, out_path)
-    mut_list = cellfun(@Mutation.identify_Cas9_events, summary.alleles, 'un', false);
-    alleles_rec = cellfun(@Mutation.apply_mutations, mut_list, 'un', false);
-    alleles = cellfun(@Mutation.apply_mutations, Mutation.FromFile([out_path '/AlleleAnnotations.txt']), 'un', false);
+    mut_list = cellfun(@(x) Mutation.identify_cas9_events(summary.CARLIN_def,x), summary.alleles, 'un', false);
+    alleles_rec = cellfun(@(x) Mutation.apply_mutations(summary.CARLIN_def,x), mut_list, 'un', false);
+    alleles = cellfun(@(x) Mutation.apply_mutations(summary.CARLIN_def, x), Mutation.FromFile(summary.CARLIN_def, [out_path '/AlleleAnnotations.txt']), 'un', false);
     verifyEqual(testCase, alleles, alleles_rec);
     colonies = cellfun(@(x) strsplit(x, ',')', splitlines(fileread([out_path '/AlleleColonies.txt'])), 'un', false);
     verifyEqual(testCase, colonies, summary.allele_colony)

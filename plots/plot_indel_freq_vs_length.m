@@ -34,7 +34,7 @@ function [sp, ins_freq, del_freq] = plot_indel_freq_vs_length(summary, allele_br
         sp = subplot(Nr, Nc, which_sp);
     end
     
-    mut_events = cellfun(@Mutation.identify_Cas9_events, summary.alleles, 'un', false);
+    mut_events = cellfun(@(x) Mutation.identify_cas9_events(summary.CARLIN_def, x), summary.alleles, 'un', false);
     [num_bp_del, num_bp_ins] = cellfun(@(x) arrayfun(@(i) x(i).num_bps_indel, [1:length(x)]'), mut_events, 'un', false);
     L_max = max([vertcat(num_bp_del{:}); vertcat(num_bp_ins{:})]);
     
@@ -56,8 +56,8 @@ function [sp, ins_freq, del_freq] = plot_indel_freq_vs_length(summary, allele_br
         del_freq = cellfun(@(x) x/summary.N.eventful_tags, del_freq, 'un', false);
     end
 
-    h1 = bar([1:L_max]',  horzcat(ins_freq{:}), 'stacked', 'FaceColor', 'b', 'BarWidth', 1.0); hold on;
-    h2 = bar([1:L_max]', -horzcat(del_freq{:}), 'stacked', 'FaceColor', 'r', 'BarWidth', 1.0); hold off;
+    h1 = bar([1:L_max]',  horzcat(ins_freq{:}), 'stacked', 'FaceColor', [CARLIN_viz.color('I')]/255, 'BarWidth', 1.0); hold on;
+    h2 = bar([1:L_max]', -horzcat(del_freq{:}), 'stacked', 'FaceColor', [CARLIN_viz.color('D')]/255, 'BarWidth', 1.0); hold off;
     axis tight;
     xlim([0.5 L_max+0.5]);
     

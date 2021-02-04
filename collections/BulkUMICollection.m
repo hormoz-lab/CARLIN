@@ -10,7 +10,7 @@ classdef BulkUMICollection < TaggedCollection & CallableCollection
             obj.UMIs = UMI_data;
         end
         
-        function call_result = call_alleles(obj, depth, aligned)
+        function call_result = call_alleles(obj, CARLIN_def, aligned, depth)
             
             assert(isscalar(depth) && depth > 0);
             
@@ -25,7 +25,7 @@ classdef BulkUMICollection < TaggedCollection & CallableCollection
             
             % This can be parfor on a bigmem machine
             for i = 1:N            
-                call_result{i} = temp(i).call_alleles(depth, aligned);
+                call_result{i} = temp(i).call_alleles(CARLIN_def, aligned, depth);
             end
             
             uncalled = cellfun(@isempty, call_result);
@@ -40,13 +40,13 @@ classdef BulkUMICollection < TaggedCollection & CallableCollection
             
         end
         
-        function [out, UMI_map] = denoise(obj, aligned)
+        function [out, UMI_map] = denoise(obj, CARLIN_def, aligned)
             
             fprintf('Denoising UMI collection\n');
             k = {obj.UMIs.UMI}';
             v = k;
             
-            call_result = obj.call_alleles(1, aligned);
+            call_result = obj.call_alleles(CARLIN_def, aligned, 1);
             [is, where] = ismember(k, {call_result.UMI}');
             valid_UMIs = find(is);
             

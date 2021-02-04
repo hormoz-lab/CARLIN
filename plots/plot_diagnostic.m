@@ -198,6 +198,9 @@ function sp = plot_read_distribution(Nr, Nc, which_sp, CB_collection_denoised, t
         plot(log10(1:length(freq)), log10(freq), 'Color', 'black'); hold on;        
         x_cut = log10(summary.N.common_tags);
         y_cut = log10(thresholds.chosen);
+        if (isempty(y_cut))
+            y_cut = 0;
+        end
         line([x_cut, x_cut], [0 y_cut], 'LineStyle', ':');
         line([0 x_cut], [y_cut y_cut], 'LineStyle', ':');        
         hold off;
@@ -210,10 +213,16 @@ function sp = plot_read_distribution(Nr, Nc, which_sp, CB_collection_denoised, t
         plot(log10(1:length(UMI_freq)), log10(UMI_freq), 'Color', 'blue');        
         x_cut = log10(summary.N.common_tags);
         y_cut = log10(thresholds.CB.chosen);
+        if (isempty(y_cut))
+            y_cut = 0;
+        end
         line([x_cut, x_cut], [0 y_cut], 'Color', 'black', 'LineStyle', ':');
         line([0 x_cut], [y_cut y_cut], 'Color', 'black', 'LineStyle', ':');
         x_cut = log10(find(UMI_freq>=thresholds.UMI.chosen, 1, 'last'));
         y_cut = log10(thresholds.UMI.chosen);
+        if (isempty(y_cut))
+            y_cut = 0;
+        end
         line([x_cut, x_cut], [0 y_cut], 'Color', 'blue', 'LineStyle', ':');
         line([0 x_cut], [y_cut y_cut], 'Color', 'blue', 'LineStyle', ':');
         hold off;
@@ -487,7 +496,7 @@ end
 function sp = reads_by_tag(Nr, Nc, which_sp, dat, cutoff, summary, type)
 
     template_index = find(strcmp(cellfun(@(x) degap(x.get_seq), summary.alleles, 'un', false), ...
-                                 CARLIN_def.getInstance.seq.CARLIN));
+                                 summary.CARLIN_def.seq.CARLIN));
 
     y_reads = accumarray(dat.CB,1);
     y_reads = y_reads(1:cutoff);
@@ -552,7 +561,7 @@ function sp = reads_by_allele(Nr, Nc, which_sp, dat, summary)
     assert(summary.N.called_tags == length(unique(dat.CB(dat.allele>0))));
     
     template_mask = strcmp(cellfun(@(x) degap(x.get_seq), summary.alleles, 'un', false), ...
-                            CARLIN_def.getInstance.seq.CARLIN);
+                            summary.CARLIN_def.seq.CARLIN);
     
     y_reads = accumarray(dat.allele_eventual(dat.allele_eventual>0),1);    
     assert(sum(y_reads) == summary.reads.called_tags_total);

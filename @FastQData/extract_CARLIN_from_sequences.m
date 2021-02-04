@@ -1,18 +1,16 @@
-function [SEQ_trimmed, read_SEQ_trimmed, masks, trim_loc] = extract_CARLIN_from_sequences(SEQ_raw, read_SEQ_raw, cfg)
+function [SEQ_trimmed, read_SEQ_trimmed, masks, trim_loc] = extract_CARLIN_from_sequences(SEQ_raw, read_SEQ_raw, cfg, CARLIN_def)
             
     fprintf('Trimming CARLIN sequences from reads\n');
-    
-    ref = CARLIN_def.getInstance;
-    
+        
     % A one-off check to see if we match any CARLIN conserved sites exactly as a 
     % coarse way of quantifying off-target amplification. Not directly used in filtering.
-    consite_loc = arrayfun(@(i) strfind(SEQ_raw, ref.getInstance.seq.consites{i}), 1:10, 'un', false);
+    consite_loc = arrayfun(@(i) strfind(SEQ_raw, CARLIN_def.seq.consites{i}), 1:CARLIN_def.N.segments, 'un', false);
     masks.CARLIN_match = any(~cellfun(@isempty, horzcat(consite_loc{:})),2);
     
     head_offset = 0;
     tail_offset = 0;
     if (startsWith(cfg.type, 'Bulk'))
-        if (cfg.read_perspective.ShouldReverse == 'N')
+        if ((cfg.UMI.location == 'L') == (cfg.read_perspective.ShouldReverse == 'N'))
             head_offset = cfg.UMI.length;
         else
             tail_offset = cfg.UMI.length;
@@ -20,14 +18,14 @@ function [SEQ_trimmed, read_SEQ_trimmed, masks, trim_loc] = extract_CARLIN_from_
     end
 
     [masks.valid_5_primer, trim_loc.head_after_trim_5_primer] = ...
-        FastQData.trim_at_scrutiny_level(cfg.trim.Primer5, SEQ_raw, ref.seq.Primer5, 'head', head_offset, ref.match_score.Primer5);
+        FastQData.trim_at_scrutiny_level(cfg.trim.Primer5, SEQ_raw, CARLIN_def.seq.Primer5, 'head', head_offset, CARLIN_def.match_score.Primer5);
 
     [masks.valid_3_primer, trim_loc.tail_after_trim_3_primer] = ...
-        FastQData.trim_at_scrutiny_level(cfg.trim.Primer3, SEQ_raw, ref.seq.Primer3, 'tail', tail_offset, ref.match_score.Primer3);
+        FastQData.trim_at_scrutiny_level(cfg.trim.Primer3, SEQ_raw, CARLIN_def.seq.Primer3, 'tail', tail_offset, CARLIN_def.match_score.Primer3);
 
     [masks.valid_2_seq,    trim_loc.tail_after_trim_2_seq   ] = ...
-        FastQData.trim_at_scrutiny_level(cfg.trim.SecondarySequence, SEQ_raw, ref.seq.SecondarySequence, ...
-                                         'tail', ref.width.Primer3+tail_offset, ref.match_score.SecondarySequence);
+        FastQData.trim_at_scrutiny_level(cfg.trim.SecondarySequence, SEQ_raw, CARLIN_def.seq.SecondarySequence, ...
+                                         'tail', CARLIN_def.width.Primer3+tail_offset, CARLIN_def.match_score.SecondarySequence);
 
     masks.valid_read_structure = ( masks.valid_5_primer & masks.valid_3_primer & masks.valid_2_seq );
 
@@ -40,7 +38,7 @@ function [SEQ_trimmed, read_SEQ_trimmed, masks, trim_loc] = extract_CARLIN_from_
     
     masks.trimmed_SEQ_long_enough = false(size(masks.valid_read_structure));
     masks.trimmed_SEQ_long_enough(masks.valid_read_structure) = ...
-        cellfun(@length, SEQ_trimmed(masks.valid_read_structure)) >= ref.width.min_length;
+        cellfun(@length, SEQ_trimmed(masks.valid_read_structure)) >= CARLIN_def.width.min_length;
 
     masks.SEQ_no_N = false(size(masks.valid_read_structure));
     masks.SEQ_no_N(masks.valid_read_structure) = ~cellfun(@(x) any(x=='N'), SEQ_trimmed(masks.valid_read_structure));

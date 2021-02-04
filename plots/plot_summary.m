@@ -1,6 +1,8 @@
 function plot_summary(summary, outdir)
 
     assert(isa(summary, 'ExperimentSummary'));
+    
+    ref = summary.CARLIN_def;
 
     fig = figure('units','normalized','outerposition',[0 0 1 1]);
     scrsz = get(0,'ScreenSize');
@@ -30,7 +32,7 @@ function plot_summary(summary, outdir)
                        sprintf('%5d alleles', size(summary.alleles,1))}, 'FontName', 'FixedWidth');
     else
         tag = 'tag';
-        refseq = CARLIN_def.getInstance.seq.CARLIN;
+        refseq = ref.seq.CARLIN;
         is_template = ismember(cellfun(@(x) degap(x.get_seq), summary.alleles, 'un', false), refseq);
         text(0, 0.85, {sprintf('%5d callable %ss', sum(summary.allele_freqs), tag);
                        sprintf('%5d eventful %ss', sum(summary.allele_freqs(~is_template)), tag);
@@ -52,7 +54,7 @@ function plot_summary(summary, outdir)
     % Top Right
     s_tr = subplot(2,2,2);
     if (~isempty(summary.alleles))
-        [~, del_event, ins_event] = cellfun(@(x) Mutation.classify_bp_event(x), summary.alleles, 'Un', false);
+        [~, del_event, ins_event] = cellfun(@(x) Mutation.classify_bp_event(ref, x), summary.alleles, 'Un', false);
         del_event = vertcat(del_event{:});
         ins_event = vertcat(ins_event{:});
         del_pct = sum(del_event.*summary.allele_freqs,1)/sum(summary.allele_freqs)*100;
@@ -65,29 +67,28 @@ function plot_summary(summary, outdir)
         ylim_max = max(ylim_max, 10);
         if (isempty(ylim_max))
             ylim_max = 10;
-        end
-        ref = CARLIN_def.getInstance;
+        end        
         bp_bounds = ref.bounds.ordered;
         hold on;
         for i = 1:ref.N.motifs
             x = [bp_bounds(i,1)-0.5 bp_bounds(i,1)-0.5 bp_bounds(i,2)+0.5 bp_bounds(i,2)+0.5];
             y = [0 ylim_max, ylim_max, 0];
             if (ismember(i, ref.motifs.prefix))
-                face_alpha = 1-ref.alpha.prefix;        
+                face_alpha = 1-CARLIN_viz.alpha.prefix;        
             elseif (ismember(i, ref.motifs.consites))
-                face_alpha = 1-ref.alpha.consite;
+                face_alpha = 1-CARLIN_viz.alpha.consite;
             elseif (ismember(i, ref.motifs.cutsites))
-                face_alpha = 1-ref.alpha.cutsite;
+                face_alpha = 1-CARLIN_viz.alpha.cutsite;
             elseif (ismember(i, ref.motifs.pams))
-                face_alpha = 1-ref.alpha.pam;
+                face_alpha = 1-CARLIN_viz.alpha.pam;
             elseif (ismember(i, ref.motifs.postfix))
-                face_alpha = 1-ref.alpha.postfix;    
+                face_alpha = 1-CARLIN_viz.alpha.postfix;    
             end
-            patch(x, y, 'black', 'FaceAlpha', face_alpha*ref.alpha.overlay);
+            patch(x, y, 'black', 'FaceAlpha', face_alpha*CARLIN_viz.alpha.overlay);
         end
 
-        plot(del_pct, 'red');            
-        bar(ins_pct, 'blue'); hold off;
+        plot(del_pct, 'Color', CARLIN_viz.color('D')/255);            
+        bar(ins_pct, 'FaceColor', CARLIN_viz.color('I')/255); hold off;
         axis tight;  
         ylim([0 ylim_max]);        
     end
@@ -97,14 +98,14 @@ function plot_summary(summary, outdir)
     % Bottom Right
     s_br = subplot(2,2,4);                      
     if (~isempty(summary.alleles))
-        RGB = get_sequence_coloring(summary.alleles, 'bp');
+        RGB = get_sequence_coloring(ref, summary.alleles, 'bp');
 
         imshow(RGB, 'XData', [1 size(RGB,2)]', 'YData', [1 size(RGB,1)]); hold on;
-        h = imshow(repmat(CARLIN_def.getInstance.alpha.CARLIN, [size(RGB,1), 1]), 'XData', [1 size(RGB,2)]', 'YData', [1 size(RGB,1)]);  hold off;
+        h = imshow(repmat(CARLIN_viz.get_alpha(ref), [size(RGB,1), 1]), 'XData', [1 size(RGB,2)]', 'YData', [1 size(RGB,1)]);  hold off;
         
-        set(h, 'AlphaData', CARLIN_def.getInstance.alpha.overlay);
+        set(h, 'AlphaData', CARLIN_viz.alpha.overlay);
         axis tight;        
-        daspect([scrsz(2)*rel_seq_height/length(summary.alleles), scrsz(1)*rel_edit_width/CARLIN_def.getInstance.width.CARLIN, 1]);
+        daspect([scrsz(2)*rel_seq_height/length(summary.alleles), scrsz(1)*rel_edit_width/ref.width.CARLIN, 1]);
     end    
     
     axis on; box on; xticks([]); yticks([]);

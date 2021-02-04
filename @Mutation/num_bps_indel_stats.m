@@ -6,14 +6,14 @@ function [num_bp_del_mu, num_bp_ins_mu, num_bp_del_sd, num_bp_ins_sd] = num_bps_
 
     assert(isa(summary, 'ExperimentSummary'));
     
-    mut_events = cellfun(@Mutation.identify_Cas9_events, summary.alleles, 'un', false);
+    mut_events = cellfun(@(x) Mutation.identify_cas9_events(summary.CARLIN_def, x), summary.alleles, 'un', false);
     [num_bp_del, num_bp_ins] = cellfun(@(x) arrayfun(@(i) x(i).num_bps_indel, [1:length(x)]'), mut_events, 'un', false);
     num_bp_del = cellfun(@(x) sum(x), num_bp_del);
     num_bp_ins = cellfun(@(x) sum(x), num_bp_ins);
     
     if (edited_only)
         
-        is_template = ismember(cellfun(@(x) x.get_seq, summary.alleles, 'un', false), CARLIN_def.getInstance.seq.CARLIN);
+        is_template = ismember(cellfun(@(x) x.get_seq, summary.alleles, 'un', false), summary.CARLIN_def.seq.CARLIN);
         
         num_bp_ins_mu = sum(num_bp_ins(~is_template) .* summary.allele_freqs(~is_template))/sum(summary.allele_freqs(~is_template));
         num_bp_del_mu = sum(num_bp_del(~is_template) .* summary.allele_freqs(~is_template))/sum(summary.allele_freqs(~is_template));

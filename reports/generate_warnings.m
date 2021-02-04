@@ -50,7 +50,7 @@ function generate_warnings(summary, params, suspect_alleles, output_path)
     pct_CARLIN_end_found = double(summary.reads.valid_2_seq)/double(summary.reads.in_fastq)*100;
     if (ota_pct <= 10)
         if (pct_CARLIN_end_found < 75)
-            errstr = sprintf('The end of the CARLIN construct is detected in only %.0f%% of reads.', round(pct_CARLIN_end_found));
+            errstr = sprintf('The end of the CARLIN amplicon is detected in only %.0f%% of reads.', round(pct_CARLIN_end_found));
             if (sc)
                 errstr = [errstr ' This is likely because QC degrades toward the end of the read and is discarded by Illumina.'];                
                 if (indrops)
@@ -159,14 +159,14 @@ function generate_warnings(summary, params, suspect_alleles, output_path)
     results_issues = false;
       
     pct_edited = double(summary.N.eventful_tags)/double(summary.N.called_tags)*100;
-    CP = mean(cellfun(@(x) CARLIN_def.getInstance.N.segments-length(Mutation.find_modified_sites(x)), summary.alleles));
+    CP = mean(cellfun(@(x) summary.CARLIN_def.N.segments-length(Mutation.find_modified_sites(summary.CARLIN_def, x)), summary.alleles));
     
     if (pct_edited < 30)
         fprintf(fid, '\nLow +Dox induction detected. Only %.0f%% of %ss reported an edited CARLIN allele.\n', round(pct_edited), tag);
         results_issues = true;
     else    
         template_mask = strcmp(cellfun(@(x) degap(x.get_seq), summary.alleles, 'un', false), ...
-                               CARLIN_def.getInstance.seq.CARLIN);
+                               summary.CARLIN_def.seq.CARLIN);
         prestr = [];
         if (~any(template_mask))
             prestr = sprintf('Template allele never reported by any %s.', tag);

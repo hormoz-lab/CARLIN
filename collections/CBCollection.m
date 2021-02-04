@@ -10,7 +10,7 @@ classdef CBCollection < TaggedCollection & CallableCollection
             obj.CBs = CB_data;
         end
         
-        function call_result = call_alleles(obj, depth, aligned)
+        function call_result = call_alleles(obj, CARLIN_def, aligned, depth)
             
             fprintf('Calling alleles for CB collection\n');
             assert(isequal(size(depth), [1, 2]) && all(depth > 0) && (depth(1) >= depth(2)));                        
@@ -22,7 +22,7 @@ classdef CBCollection < TaggedCollection & CallableCollection
             
             % This can be parfor on a bigmem machine
             for i = 1:N
-                call_result{i} = temp(i).call_alleles(depth, aligned);
+                call_result{i} = temp(i).call_alleles(CARLIN_def, aligned, depth);
             end
             
             % Call result has a per-CB allele (which may or may not be empty) and a 

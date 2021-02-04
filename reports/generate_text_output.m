@@ -1,4 +1,4 @@
-function generate_text_output(summary, params, thresholds, output_path)
+function generate_text_output(summary, params, thresholds, output_path, varargin)
 
     fprintf('Generating results file\n');
     
@@ -10,13 +10,16 @@ function generate_text_output(summary, params, thresholds, output_path)
     sc = startsWith(params.Results.cfg_type, 'sc');
     if (sc)
         tag = 'CB';
+        assert(nargin == 8);
     else
         tag = 'UMI';
+        assert(nargin == 4);
     end
     
     fprintf(fid, 'INPUT\n\n');
     
-    fprintf(fid, '%-55s %s\n', 'CfgType:', params.Results.cfg_type);
+    fprintf(fid, '%-55s %s\n', 'CARLIN Amplicon:', params.Results.CARLIN_amplicon);
+    fprintf(fid, '%-55s %s\n', 'CfgType:', params.Results.cfg_type);    
     if (iscell(params.Results.fastq_file))
         fastq_files = {params.Results.fastq_file{:}};
         fprintf(fid, '%-55s %s\n', 'Input FastQ File(s):', fastq_files{1});
@@ -63,7 +66,30 @@ function generate_text_output(summary, params, thresholds, output_path)
     for x = fieldnames(summary.N)'
         fprintf(fid, '%-55s %10d\n', [erase(x{1}, '_tags') ':'], summary.N.(x{1}));
     end
-           
+    
+    if (sc)
+        % Gross - I didn't design ExperimentSummary to save this
+        % information, so I have to recalculate here.
+        fprintf(fid, '\nUMI BREAKDOWN\n\n');        
+        tag_collection = varargin{1};
+        tag_collection_denoised = varargin{2};
+        tag_denoise_map = varargin{3};
+        tag_called_allele = varargin{4};
+        Numi_uncleaned = sum(cellfun(@length, {tag_collection.CBs.UMIs}));
+        Numi_matched = sum(cellfun(@length, {tag_collection.CBs(ismember({tag_collection.CBs.CB}, keys(tag_denoise_map.CB))).UMIs}));
+        Numi_cleaned = sum(cellfun(@length, {tag_collection_denoised.CBs.UMIs}));
+        Numi_common = sum(cellfun(@(x) sum(cellfun(@sum, {x.SEQ_weight})>=thresholds.UMI.chosen), {tag_collection_denoised.CBs.UMIs}));
+        Numi_called = sum(cellfun(@(x) size(vertcat(x.allele),1), {tag_called_allele.umi_call_result}));
+        Numi_eventful = sum(cellfun(@(x) sum(cellfun(@(y) ~isequal(degap(y.get_seq), summary.CARLIN_def.seq.CARLIN), ...
+                                         num2cell(vertcat(x.allele)))), {tag_called_allele.umi_call_result}));
+        fprintf(fid, '%-55s %10d\n', 'uncleaned:', Numi_uncleaned);
+        fprintf(fid, '%-55s %10d\n', 'matched:', Numi_matched);
+        fprintf(fid, '%-55s %10d\n', 'cleaned:', Numi_cleaned);
+        fprintf(fid, '%-55s %10d\n', 'common:', Numi_common);
+        fprintf(fid, '%-55s %10d\n', 'called:', Numi_called);
+        fprintf(fid, '%-55s %10d\n', 'eventful:', Numi_eventful);
+    end    
+    
     fprintf(fid, '\nPREFERENTIAL AMPLIFICATION\n\n');    
     
     fprintf(fid, '%-55s %10d\n', sprintf('Mean reads per edited %s:', tag), max(round(summary.reads.eventful_tags_total/summary.N.eventful_tags),0));
@@ -87,18 +113,17 @@ function generate_text_output(summary, params, thresholds, output_path)
     fprintf(fid, '%-55s %10.2f\n', 'Diversity Index (normalized by all):', diversity_index(summary, false));
     fprintf(fid, '%-55s %10.2f\n', 'Diversity Index (normalized by edited):', diversity_index(summary, true));
     fprintf(fid, '%-55s %10.2f\n', 'Mean CARLIN potential (by allele):', ...
-        max(mean(cellfun(@(x) CARLIN_def.getInstance.N.segments-length(Mutation.find_modified_sites(x)), summary.alleles)),0));
+        max(mean(cellfun(@(x) summary.CARLIN_def.N.segments-length(Mutation.find_modified_sites(summary.CARLIN_def, x)), summary.alleles)),0));
     
     fclose(fid);
     copyfile(filename, [output_path '/Results.txt']);
     
-    Mutation.ToFile(summary.alleles, output_path, 'AlleleAnnotations.txt');
+    Mutation.ToFile(summary.CARLIN_def, summary.alleles, output_path, 'AlleleAnnotations.txt');
     
     s = cellfun(@(x) strjoin(x,','), summary.allele_colony, 'un', false);
     fid = fopen([output_path '/AlleleColonies.txt'], 'wt');
     if (~isempty(s))
-        fprintf(fid, '%s\n', s{1:end-1});
-        fprintf(fid, '%s', s{end});
+        fprintf(fid, '%s\n', s{:});
     end
     fclose(fid);
 

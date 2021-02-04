@@ -1,6 +1,6 @@
-function [alleles, which_seqs, weight_contribution] = call_alleles_coarse_grain(aligned_seqs, aligned_seq_weights, dominant_only)
+function [alleles, which_seqs, weight_contribution] = call_alleles_coarse_grain(CARLIN_def, aligned_seqs, aligned_seq_weights, dominant_only)
 
-    if (nargin < 2)
+    if (nargin < 3)
         aligned_seq_weights = ones(size(aligned_seqs));
     else        
         assert(size(aligned_seqs,1) == size(aligned_seq_weights,1));
@@ -18,7 +18,7 @@ function [alleles, which_seqs, weight_contribution] = call_alleles_coarse_grain(
         return;
     end
 
-    if (nargin < 3)
+    if (nargin < 4)
         dominant_only = true;
     end
 

@@ -47,7 +47,7 @@ You should also re-run the installation when you pull new changes from git.
 
 ## Usage
 
-The entry point to the pipeline is the analyze_CARLIN function.
+The entry point to the pipeline is the `analyze_CARLIN` function.
 
 ```MATLAB
 >> help analyze_CARLIN 
@@ -56,25 +56,26 @@ The entry point to the pipeline is the analyze_CARLIN function.
     analyze_CARLIN calls alleles from FASTQs sequencing the CARLIN amplicon. 
  
     analyze_CARLIN(FASTQ_FILE, CFG_TYPE, OUTDIR) analyzes FASTQ_FILE 
-    (*.fastq, *.fastq.gz) generated according to CFG_TYPE (one of 'BulkDNA', 
-    'BulkRNA', 'scInDropsV2', 'scInDropsV3', 'sc10xV2', 'sc10xV3') and saves the 
+    (*.fastq, *.fastq.gz) generated according to the experimental CARLIN
+    protocol defined in CFG_TYPE (one of 'Sanger', 'BulkDNA', 'BulkRNA', 
+    'scInDropsV2', 'scInDropsV3', 'sc10xV2', 'sc10xV3') and saves the 
     following files to OUTDIR:
 
     Analysis.mat.gz - contains all variables including a compactified 
-      representation of the FastQ files, a depot of unique aligned
+      representation of the FASTQ files, a depot of unique aligned
       sequences, the collection of CBs and UMIs detected before and after 
       denoising, and the called alleles. This file may be large, and is not
-      intended for use by a casual-user, rather to save state to do any
-      custom one-off analysis.
+      intended for use by a casual user. Rather, it stores all intermediate 
+      variables for custom one-off analysis.
 
-    Summary.mat - contains a subset of the variables in Analysis.mat that 
-      are usually sufficient for subsequent downstream analysis in MATLAB
+    Summary.mat - contains the subset of variables in Analysis.mat that 
+      is usually sufficient for subsequent downstream analysis
       including a list of alleles, their frequencies, tags (UMIs or CBs) 
       reporting that allele, input parameters, thresholds used by the 
-      algorithm - and, for SC runs - the reference barcode list.
+      algorithm, and, for SC runs, the reference barcode list.
 
-    Alleles.png - Plot of sequence and distribution of alleles with
-        summary statistics.
+    Alleles.png - Plot of mutations harbored in each allele, distribution of 
+      allele occurrence frequencies and summary statistics.
 
     AlleleAnnotations.txt - Annotations describing each allele in plaintext
       format (HGVS) for use by other downstream tools.
@@ -92,6 +93,12 @@ The entry point to the pipeline is the analyze_CARLIN function.
     Log.txt - Running log of the pipeline.
 
     The pipeline can optionally be invoked with some extra paramters:
+
+    analyze_CARLIN(..., 'CARLIN_amplicon', CARLIN_def) uses the nucleotide
+    sequence and alignment parameters in 'CARLIN_def' to define the CARLIN
+    amplicon and align reads against it. Defaults to 'OriginalCARLIN', which 
+    corresponds to the amplicon used in the (Cell, 2020) paper. Can also 
+    specify 'TigreCARLIN'. See *.json files in cfg/amplicon for full definitions. 
 
     analyze_CARLIN(..., 'read_cutoff_UMI_denoised', cutoff) uses a minimum
     read threshold of 'cutoff' when attempting to call alleles from denoised 
@@ -133,7 +140,7 @@ The entry point to the pipeline is the analyze_CARLIN function.
 
     analyze_CARLIN(..., 'ref_CB_file', file) uses the reference list of 
     cell barcodes in the file specified by 'ref_CB_file' when denoising 
-    barcodes found in the FastQ files. The reference list should have one 
+    barcodes found in the FASTQ files. The reference list should have one 
     cell barcode per line. Each cell barcode should be a string consisting 
     of only the characters {A,C,G,T}. The length of the barcode should match
     the length expected by the platform specified by CFG_TYPE. This reference
@@ -170,7 +177,7 @@ Each run of the pipeline also produces a summary plot, with useful at-a-glance m
 
 <p align=center><img src="doc/Summary.png" width="900" height="450"></p>
 
-Here's a brief look at the text outputs.
+Here's a brief look at the text outputs from a sample run:
 
 ```bash
 $ tail AlleleAnnotations.txt 
@@ -266,9 +273,9 @@ Each run of the CARLIN pipeline produces an `ExperimentSummary` or `ExperimentRe
 
 ## Statistical Significance of Alleles
 
-A main contribution of the CARLIN paper is to quantify the statistical significance of alleles (see Methods). Cas9 editing does not generate all alleles with equal probability - those with complex editing patterns are more rare. The more common alleles are more likely to coincidentally mark multiple progenitors, and are therefore less useful for lineage tracing. Alleles that should be rare but are abundant in a particular experiment are statistically significant. 
+A main contribution of the CARLIN paper (Cell, 2020) is to quantify the statistical significance of alleles (see Methods). Cas9 editing does not generate all alleles with equal probability - those with complex editing patterns are more rare. The more common alleles are more likely to coincidentally mark multiple progenitors, and are therefore less useful for lineage tracing. Alleles that should be rare but are abundant in a particular experiment are statistically significant. 
 
-Statistical significance is determined by comparing the observed frequency of an allele in an experiment, with the expected frequency. The observed frequency is stored in `summary.allele_freqs`. The expected frequency distribution can be determined by using the allele bank, (stored in the `Bank` variable of `Bank.mat`), which is the same bank used in Figure 3 of the paper.
+Statistical significance is determined by comparing the observed frequency of an allele in an experiment, with the expected frequency. The observed frequency is stored in `summary.allele_freqs`. The expected frequency distribution can be determined by using the allele bank, (stored in the `Bank` variable of `Bank_OriginalCARLIN.mat`), which is the same bank used in Figure 3 of (Cell, 2020).
 
 You can compute the two p-values described in Methods as shown:
 
@@ -287,7 +294,7 @@ To create a custom bank characterizing the null distribution of allele frequenci
 
 	CODE_PATH/@Bank/CatchAllPath.txt
 
-Run the following code to create a `Bank` object from pooling three libraries (saved in directories `Mouse1`, `Mouse2`, and `Mouse3`), each processed separately using the CARLIN pipeline, and save the result in `MyCustomBank/Bank.mat`:
+Run the following code to create a `Bank` object by pooling three libraries (saved in directories `Mouse1`, `Mouse2`, and `Mouse3`), each processed separately using the CARLIN pipeline, and save the result in `MyCustomBank/Bank.mat`:
 
 ```MATLAB
 >> mouse1 = load('Mouse1/Summary.mat');
@@ -314,7 +321,7 @@ A CARLIN allele is stored as two aligned strings - a sequence and a reference. T
 To retrieve a list of mutations called from a set of alleles, and inspect the second mutation in the thirteenth allele:
 
 ```MATLAB
->> mut_list = cellfun(@Mutation.identify_Cas9_events, summary.alleles, 'un', false);
+>> mut_list = cellfun(@(x) Mutation.identify_cas9_events(summary.CARLIN_def, x), summary.alleles, 'un', false);
 >> mut_list{13}(2)
 
     ans = 
@@ -337,18 +344,18 @@ To retrieve a list of mutations called from a set of alleles, and inspect the se
 To output a list of mutations to a text file in HGVS format as shown in AlleleAnnotations.txt:
 
 ```MATLAB
->> Mutation.ToFile(mut_list, 'output_path', 'mootations.txt');
+>> Mutation.ToFile(summary.CARLIN_def, mut_list, 'output_path', 'mootations.txt');
 ```
 
-To construct CARLIN alleles from a list of mutations specified in HGVS format like AlleleAnnotations.txt:
+To construct CARLIN alleles by applying mutations from a list specified in HGVS format (like AlleleAnnotations.txt) to the `CARLIN_amplicon` defined in CARLIN_def:
 
 ```MATLAB
->> alleles = cellfun(@Mutation.apply_mutations, Mutation.FromFile('dootations.txt'), 'un', false);
+>> alleles = cellfun(@(x) Mutation.apply_mutations(CARLIN_def, x), Mutation.FromFile(CARLIN_def, 'dootations.txt'), 'un', false);
 ```
 
 ## Visualization
 
-This package also includes a few standard visualizations, that will produce figures like those shown in the paper. They all take an `ExperimentSummary` object as input. 
+This package also includes a few standard visualizations, that will produce figures like those shown in the (Cell, 2020) paper. They all take an `ExperimentSummary` object as input. You can change the color scheme by modifying the constants in plots/CARLIN_viz.m
 
 Visualize the top 75 most common edited alleles:
 ```MATLAB
@@ -380,6 +387,109 @@ Visualize the editing patterns in more detail:
 ```
 <p align=center><img src="doc/Stargate.png" width="300"></p>
 
+## Custom Configurations
+
+The CARLIN pipeline allows limited scope for customization by allowing advanced users to specify their own configuration file, which tells the pipeline how reads from the input FASTQ file(s) should be interpreted. Since only the default configurations have been tested, we cannot guarantee that exotic configurations will work out-of-the-box. _**Caveat emptor**_.
+
+To specify a custom configuration file set CFG_TYPE='PATH/TO/CustomCfg.json' when calling `analyze_CARLIN`. Instead of creating your configuration file from scratch, copy the existing default from CODE_PATH/cfg/library/*.json that most resembles your desired settings and make the required modifications.
+
+The pipeline expects configuration files to have the following fields:
+
+* type : {"Bulk", "SC"}
+
+Are the FASTQs from "Bulk" experiments, in which reads are only tagged with UMIs, or from "SC" experiments, in which reads are also associated with CBs? If type="Bulk", the input FASTQ should contain paired-end reads, and the UMI should always be immediately 5' or 3' of the amplicon sequence (see UMI.location and read_perspective below). If type="SC", the software expects FASTQs in the exact format produced by either the CellRanger (10x) or [CARLIN_InDrops](https://gitlab.com/hormozlab/indrops) pipeline.
+
+* SC.Platform : {"10x", "InDrops"}
+* SC.Version : {2, 3}
+
+Specify the FASTQ format when type="SC". Do not include if type~="SC".
+
+* UMI.length : [whole number]
+
+Specify the number of bps in a UMI.
+
+* UMI.location : {"L", "R"}
+
+When type="Bulk", is the UMI located to the left or right of the amplicon sequence in the read (before applying the transformations in read_perspective below)? Do not include if type="SC".
+
+* CB.length : [whole number]
+
+Specify the number of bps in a CB. Do not include if type~="SC".
+
+* read_perspective.ShouldComplement : {"Y", "N"}
+* read_perspective.ShouldReverse : {"Y", "N"}
+
+Specify what transformations have to be performed on the lines of the input FASTQ file so that when read left-to-right, they match the reference sequence defined in the CARLIN_amplicon file (modulo mutations).
+
+* trim.Primer5 : {"exact", "misplaced", "malformed", "ignore"}
+* trim.Primer3 : {"exact", "misplaced", "malformed", "ignore"}
+* trim.SecondarySequence: {"exact", "misplaced", "malformed", "ignore"}
+
+After applying the transformations specified in read_perspective, the lines should have the following structure:
+
+    || A | Primer5 | CARLIN | Secondary Sequence | Primer3 | B ||
+
+The CARLIN sequence can therefore be extracted by searching for the flanking primers and/or secondary sequence according to various levels of stringency (from most to least):
+    
+1. "exact" discards a read unless an exact match is found at the precise location:
+    
+    * Primer5 : A=UMI when type="Bulk" and (UMI.location=="L")==(read_perspective.Reverse=="N"). A='' otherwise.
+    * Primer3/SecondarySequence : B=UMI when type="Bulk" and (UMI.location=="L")~=(read_perspective.Reverse=="N"). B='' otherwise.
+
+2. "misplaced" discards a read unless an exact match is found irrespective of location.
+
+3. "malformed" discards a read unless nwalign with NUC44 scoring matrix and Glocal=true returns a score greater than or equal to the corresponding match_score specified in the CARLIN_amplicon file (see below).
+
+4. "ignore" does not search for the specified sequence i.e. the sequence is treated as the empty string.
+
+When type="Bulk", the UMI associated with each read is therefore considered to be the UMI.length bps to the left (right) of Primer5 (Primer3) when (UMI.location=="L")==(read_perspective.Reverse=="N") is true (false). To avoid registration of spurious UMIs due to poor alignment with the primers, it is best to set trim.Primer5={"exact","misplaced"} (trim.Primer3={"exact","misplaced"}) when type="Bulk".
+
+## Custom CRISPR Sequences
+
+The CARLIN pipeline allows limited scope for customization by allowing advanced users to supply their own CARLIN_amplicon file, which specifies the CRISPR nucleotide sequence defining the CARLIN amplicon and alignment parameters for aligning reads against this reference. Since only the default amplicons have been tested, we cannot guarantee that all CRISPR sequences will work out-of-the-box. _**Caveat emptor**_.
+
+To specify a custom CARLIN_amplicon file, supply 'PATH/TO/CustomAmplicon.json' as the 'CARLIN_amplicon' argument when calling `analyze_CARLIN`. Instead of creating your CARLIN_amplicon file from scratch, copy one of the existing defaults from CODE_PATH/cfg/amplicon/*.json and make the required modifications.
+
+The pipeline expects CARLIN_amplicon files to have the following fields:
+
+* sequence.segments : ["N...N", ... , "N...N"]
+
+An array of target sites as defined in Figure 1B of (Cell, 2020). All target sites must be the same length.
+
+* sequence.pam : ["N...N", ... , "N...N"]
+
+An array of PAM sequences as defined in Figure 1B of (Cell, 2020). The number of PAM sequences specified should be one less than the number of target sites and all PAM sequences must be the same length. If a single PAM sequence is specified, it will be repeated between all target sites. Specify an empty string if only one target site is specified in sequence.segments.
+
+* sequence.{prefix,postfix} : "N...N"
+
+A nucleotide sequence specifying the {prefix, postfix} as defined in Figure 1B of (Cell, 2020).
+
+* sequence.{Primer5,Primer3,SecondaySequence} : "N...N"
+
+A nucleotide sequence specifying the {5' Primer, 3' Primer, Secondary Sequence} (see diagram above).
+
+* match_score.{Primer5,Primer3,SecondarySequence} : [double]
+
+When the configuration file specifies trim.{Primer5,Primer3,SecondarySequence}="malformed", if nwalign with NUC44 scoring matrix and Glocal=true returns a score greater than or equal to this threshold when aligning the read to sequence.{Primer5,Primer3,SecondarySequence}, the primer/sequence is considered to be found in the read.
+
+* {open_penalty,close_penalty}.{prefix,postfix} : [double array]
+
+An array of length equal to sequence.{prefix,postfix} specifying the opening/closing penalty for the sequence. See Supplementary Table 2 and Methods of (Cell, 2020).
+
+* {open_penalty,close_penalty}.pam : [[double array], ..., [double array]]
+
+A 2D array specifying the opening/closing penalty for PAM sequences in sequence.pam. If a single array is specified, the same opening/closing penalty will be used for all PAM sequences. See Methods and Supplementary Table 2 of (Cell, 2020).
+
+* {open_penalty,close_penalty}.{consites,cutsites} : [[double array], ..., [double array]]
+
+A 2D array specifying the opening/closing penalty for conserved sites/cutsites in sequence.segments as defined in Figure 1B of (Cell, 2020). If a single array is specified, the same opening/closing penalty will be used for all target sites. The arrays must be of constant width, and the combined widths of the conserved site and cutsite penalties must match the number of bps in the target site. See Methods and Supplementary Table 2 of (Cell, 2020).
+
+* open_penalty.init : [double]
+
+Specify the opening insertion penalty. See Methods and Supplementary Table 2 of (Cell, 2020).
+
+Each `ExperimentSummary` object contains a `CARLIN_def` field that stores information about the `CARLIN_amplicon` used when running the pipeline. You can only merge `ExperimentSummary` objects if they have the same `CARLIN_amplicon` saved in their respective `CARLIN_def` fields. Additionally, you and can only assess statistical significance of alleles in an `ExperimentSummary` object against a `Bank` created using `ExperimentSummary` objects with the same `CARLIN_def`. Otherwise, all other features in the pipeline are agnostic to the specifics of the CARLIN amplicon.
+
 ## Troubleshooting
 
 If you're running into issues, check if the CARLIN pipeline runs properly on test datasets on your installation.
@@ -389,6 +499,6 @@ If you're running into issues, check if the CARLIN pipeline runs properly on tes
 >> runtests;
 ```
 
-There are also examples in `tests/CARLIN_pipeline_test.m`, to check if your invocation is correct. For other examples of how the code is used, please [visit the paper repository](https://gitlab.com/hormozlab/Cell_2020_carlin).
+There are also examples in `tests/CARLIN_pipeline_test.m` to check if your invocation is correct. For other examples of how the code is used, please [visit the paper repository](https://gitlab.com/hormozlab/Cell_2020_carlin).
 
 #### Prepared By: Duluxan Sritharan

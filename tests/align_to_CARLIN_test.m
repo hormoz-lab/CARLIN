@@ -3,73 +3,107 @@ function tests = align_to_CARLIN_test
 end
 
 function test_fail_on_seq_empty(testCase)
+    check_fail_on_seq_empty(testCase, CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN')));
+    check_fail_on_seq_empty(testCase, CARLIN_amplicon(parse_amplicon_file('TigreCARLIN')));
+end
+
+function check_fail_on_seq_empty(testCase, CARLIN_def)
     verifyError(testCase, @() CARLIN_def.cas9_align(''), ?MException);
 end
 
 function test_fail_on_seq_with_gaps(testCase)
+    check_fail_on_seq_with_gaps(testCase, CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN')));
+    check_fail_on_seq_with_gaps(testCase, CARLIN_amplicon(parse_amplicon_file('TigreCARLIN')));
+end
+
+function check_fail_on_seq_with_gaps(testCase, CARLIN_def)    
     verifyError(testCase, @() CARLIN_def.cas9_align('A-'), ?MException);
 end
 
 function test_align_prefix_exact(testCase)
-    obj = CARLIN_def.getInstance;
-    [~, aligned] = CARLIN_def.cas9_align(obj.seq.prefix);
+    check_align_prefix_exact(testCase, CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN')));
+    check_align_prefix_exact(testCase, CARLIN_amplicon(parse_amplicon_file('TigreCARLIN')));
+end
+
+function check_align_prefix_exact(testCase, CARLIN_def)
+    [~, aligned] = CARLIN_def.cas9_align(CARLIN_def.seq.prefix);
     s = aligned.get_seq();
     r = aligned.get_ref();
-    bounds = obj.bounds.prefix(1):obj.bounds.prefix(2);
+    bounds = CARLIN_def.bounds.prefix(1):CARLIN_def.bounds.prefix(2);
     verifyEqual(testCase, s(bounds), r(bounds));
 end
 
 function test_align_postfix_exact(testCase)
-    obj = CARLIN_def.getInstance;
-    [~, aligned] = CARLIN_def.cas9_align(obj.seq.postfix);
+    check_align_postfix_exact(testCase, CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN')));
+    check_align_postfix_exact(testCase, CARLIN_amplicon(parse_amplicon_file('TigreCARLIN')));
+end
+
+function check_align_postfix_exact(testCase, CARLIN_def)    
+    [~, aligned] = CARLIN_def.cas9_align(CARLIN_def.seq.postfix);
     s = aligned.get_seq();
     r = aligned.get_ref();
-    bounds = obj.bounds.postfix(1):obj.bounds.postfix(2);
+    bounds = CARLIN_def.bounds.postfix(1):CARLIN_def.bounds.postfix(2);
     verifyEqual(testCase, s(bounds), r(bounds));
 end
 
 function test_align_postfix_approx(testCase)
-    obj = CARLIN_def.getInstance;
-    seq = corruptor(obj.seq.postfix, 2, 98459);
+    check_align_postfix_approx(testCase, CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN')));
+    check_align_postfix_approx(testCase, CARLIN_amplicon(parse_amplicon_file('TigreCARLIN')));
+end
+
+function check_align_postfix_approx(testCase, CARLIN_def)    
+    seq = corruptor(CARLIN_def.seq.postfix, 2, 98459);
     [~, aligned] = CARLIN_def.cas9_align(seq);
     s = aligned.get_seq();
     r = aligned.get_ref();
-    bounds = obj.bounds.postfix(1):obj.bounds.postfix(2);
+    bounds = CARLIN_def.bounds.postfix(1):CARLIN_def.bounds.postfix(2);
     verifyEqual(testCase, s(bounds), seq);
-    verifyEqual(testCase, r(bounds), obj.seq.postfix);
+    verifyEqual(testCase, r(bounds), CARLIN_def.seq.postfix);
 end
 
 function test_align_segment_exact(testCase)
-    obj = CARLIN_def.getInstance;
-    for i = 1:obj.N.segments
-        [~, aligned] = CARLIN_def.cas9_align(obj.seq.segments{i});
+    check_align_segment_exact(testCase, CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN')));
+    check_align_segment_exact(testCase, CARLIN_amplicon(parse_amplicon_file('TigreCARLIN')));
+end
+
+function check_align_segment_exact(testCase, CARLIN_def)    
+    for i = 1:CARLIN_def.N.segments
+        [~, aligned] = CARLIN_def.cas9_align(CARLIN_def.seq.segments{i});
         s = aligned.get_seq();
         r = aligned.get_ref();
-        bounds = obj.bounds.segments(i,1):obj.bounds.segments(i,2);
+        bounds = CARLIN_def.bounds.segments(i,1):CARLIN_def.bounds.segments(i,2);
         verifyEqual(testCase, s(bounds), r(bounds));
     end
 end
 
 function test_align_segment_approx(testCase)
-    obj = CARLIN_def.getInstance;
-    for i = 1:obj.N.segments
-        seq = corruptor(obj.seq.segments{i}, 1, 343+i*232, 1, 7);
+    check_align_segment_approx(testCase, CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN')));
+    check_align_segment_approx(testCase, CARLIN_amplicon(parse_amplicon_file('TigreCARLIN')));
+end
+
+function check_align_segment_approx(testCase, CARLIN_def)     
+    for i = 1:CARLIN_def.N.segments
+        seq = corruptor(CARLIN_def.seq.segments{i}, 1, 343+i*232, 1, 7);
         [~, aligned] = CARLIN_def.cas9_align(seq);
         s = aligned.get_seq();
         r = aligned.get_ref();        
-        bounds = obj.bounds.segments(i,1):obj.bounds.segments(i,2);
+        bounds = CARLIN_def.bounds.segments(i,1):CARLIN_def.bounds.segments(i,2);
         verifyEqual(testCase, s(bounds), seq);
-        verifyEqual(testCase, r(bounds), obj.seq.segments{i});
+        verifyEqual(testCase, r(bounds), CARLIN_def.seq.segments{i});
     end
 end
 
 function test_align_consite_exact(testCase)
-    obj = CARLIN_def.getInstance;
-    for i = 1:obj.N.segments        
-        [~, aligned] = CARLIN_def.cas9_align(obj.seq.consites{i});
+    check_align_consite_exact(testCase, CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN')));
+    check_align_consite_exact(testCase, CARLIN_amplicon(parse_amplicon_file('TigreCARLIN')));
+end
+
+function check_align_consite_exact(testCase, CARLIN_def)
+    for i = 1:CARLIN_def.N.segments        
+        [~, aligned] = CARLIN_def.cas9_align(CARLIN_def.seq.consites{i});
         s = aligned.get_seq();
         r = aligned.get_ref();
-        bounds = obj.bounds.consites(i,1):obj.bounds.consites(i,2);
+        bounds = CARLIN_def.bounds.consites(i,1):CARLIN_def.bounds.consites(i,2);
         verifyEqual(testCase, s(bounds), r(bounds));
     end
 end
@@ -80,7 +114,8 @@ end
 
 function test_against_past_troublemakers(testCase)
     [folder, ~, ~] = fileparts(mfilename('fullpath'));    
-    s = upper(splitlines(fileread(sprintf('%s/data/Troublemakers.txt', folder))));    
+    s = upper(splitlines(fileread(sprintf('%s/data/OriginalCARLIN/Troublemakers.txt', folder))));    
+    CARLIN_def = CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN'));
     for i = 1:size(s,1)
         verifyWarningFree(testCase, @() CARLIN_def.cas9_align(s{i}));
     end
@@ -90,6 +125,7 @@ function test_long_deletion(testCase)
     % This sequence can also end up looking like an insertion at cutsite 1
     % and an elimination at cutsite 10, when really a deletion at both is a
     % better fit.
+    CARLIN_def = CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN'));
     [~, aligned] = CARLIN_def.cas9_align('CGCCGGACTGCACGACAGTCGAACGATGGGAGCT');    
     verifyEqual(testCase, aligned.get_event_structure, 'NNDEEEEEEEEEEEEEEEEEEEEEEEEEEDN')
 end
@@ -102,22 +138,22 @@ function test_against_sanger6(testCase)
    
     which_file = 'Sanger6';
 
-    ref = CARLIN_def.getInstance;
+    CARLIN_def = CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN'));
     [folder, ~, ~] = fileparts(mfilename('fullpath'));    
-    raw = upper(splitlines(fileread(sprintf('%s/data/%s.txt', folder, which_file))));
+    raw = upper(splitlines(fileread(sprintf('%s/data/OriginalCARLIN/%s.txt', folder, which_file))));
     cfg = parse_config_file('Sanger');
     
-    [trimmed, reorder, ~, trim_loc] = FastQData.extract_CARLIN_from_sequences(raw, [1:size(raw,1)]', cfg);
+    [trimmed, reorder, ~, trim_loc] = FastQData.extract_CARLIN_from_sequences(raw, [1:size(raw,1)]', cfg, CARLIN_def);
     trimmed = trimmed(reorder);
     
-    assert(all(trim_loc.head_after_trim_5_primer == ref.width.Primer5+1));
-    assert(all(trim_loc.tail_after_trim_3_primer == cellfun(@length, raw)-ref.width.Primer3));
-    assert(all(trim_loc.tail_after_trim_2_seq    == cellfun(@length, raw)-ref.width.Primer3-ref.width.SecondarySequence));
+    assert(all(trim_loc.head_after_trim_5_primer == CARLIN_def.width.Primer5+1));
+    assert(all(trim_loc.tail_after_trim_3_primer == cellfun(@length, raw)-CARLIN_def.width.Primer3));
+    assert(all(trim_loc.tail_after_trim_2_seq    == cellfun(@length, raw)-CARLIN_def.width.Primer3-CARLIN_def.width.SecondarySequence));
     
-    golden_mut_list = Mutation.FromFile(sprintf('%s/data/%sAnnotations.txt', folder, which_file));
+    golden_mut_list = Mutation.FromFile(CARLIN_def, sprintf('%s/data/OriginalCARLIN/%sAnnotations.txt', folder, which_file));
     
     [~, aligned] = cellfun(@(x) CARLIN_def.cas9_align(x), trimmed, 'un', false);
-    called_mut_list = cellfun(@(x) Mutation.identify_Cas9_events(x), aligned, 'un', false);
+    called_mut_list = cellfun(@(x) Mutation.identify_cas9_events(CARLIN_def, x), aligned, 'un', false);
     mismatch = find(cellfun(@(x,y) ~isequal(x,y), called_mut_list, golden_mut_list));        
     verifyEmpty(testCase, mismatch);
     
@@ -130,22 +166,22 @@ end
 
 function test_against_sanger75(testCase)
 
-    ref = CARLIN_def.getInstance;
+    CARLIN_def = CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN'));
     [folder, ~, ~] = fileparts(mfilename('fullpath'));
-    raw = upper(splitlines(fileread(sprintf('%s/data/Sanger75.txt', folder))));    
+    raw = upper(splitlines(fileread(sprintf('%s/data/OriginalCARLIN/Sanger75.txt', folder))));    
     cfg = parse_config_file('Sanger');
     
     [~, head_after_trim_5_primer] = ...
-        FastQData.trim_at_scrutiny_level(cfg.trim.Primer5, raw, ref.seq.Primer5, 'head', 0, ref.match_score.Primer5);
+        FastQData.trim_at_scrutiny_level(cfg.trim.Primer5, raw, CARLIN_def.seq.Primer5, 'head', 0, CARLIN_def.match_score.Primer5);
 
     [~, tail_after_trim_3_primer] = ...
-        FastQData.trim_at_scrutiny_level(cfg.trim.Primer3, raw, ref.seq.Primer3, 'tail', 0, ref.match_score.Primer3);
+        FastQData.trim_at_scrutiny_level(cfg.trim.Primer3, raw, CARLIN_def.seq.Primer3, 'tail', 0, CARLIN_def.match_score.Primer3);
 
     [~, tail_after_trim_2_seq] = ...
-        FastQData.trim_at_scrutiny_level(cfg.trim.SecondarySequence, raw, ref.seq.SecondarySequence, ...
-                                         'tail', ref.width.Primer3, ref.match_score.SecondarySequence);
+        FastQData.trim_at_scrutiny_level(cfg.trim.SecondarySequence, raw, CARLIN_def.seq.SecondarySequence, ...
+                                         'tail', CARLIN_def.width.Primer3, CARLIN_def.match_score.SecondarySequence);
                                      
-    golden_mut_list = Mutation.FromFile(sprintf('%s/data/Sanger75Annotations.txt', folder));
+    golden_mut_list = Mutation.FromFile(CARLIN_def, sprintf('%s/data/OriginalCARLIN/Sanger75Annotations.txt', folder));
     
     % These are Sanger sequences with mangled secondary sequences which
     % make calling an allele difficult, and which we discard in practice
@@ -155,8 +191,8 @@ function test_against_sanger75(testCase)
     % correct answer. Don't really care if things shift around here.
     whitelist = cellfun(@(x) isequal(x, '?'), golden_mut_list);
     
-    assert(all(head_after_trim_5_primer == ref.width.Primer5+1));
-    assert(all(tail_after_trim_3_primer == cellfun(@length, raw)-ref.width.Primer3));
+    assert(all(head_after_trim_5_primer == CARLIN_def.width.Primer5+1));
+    assert(all(tail_after_trim_3_primer == cellfun(@length, raw)-CARLIN_def.width.Primer3));
     assert(all(tail_after_trim_2_seq(blacklist) == 0));
     
     trimmed = cell(size(raw));
@@ -167,7 +203,7 @@ function test_against_sanger75(testCase)
     [~, aligned(~blacklist)] = cellfun(@(x) CARLIN_def.cas9_align(x), trimmed(~blacklist), 'un', false);
     
     called_mut_list = cell(size(aligned));
-    called_mut_list(~blacklist) = cellfun(@(x) Mutation.identify_Cas9_events(x), aligned(~blacklist), 'un', false)';
+    called_mut_list(~blacklist) = cellfun(@(x) Mutation.identify_cas9_events(CARLIN_def, x), aligned(~blacklist), 'un', false)';
     mismatch = cellfun(@(x,y) ~isequal(x,y), called_mut_list, golden_mut_list);
     
     verifyEmpty(testCase, find(mismatch & ~(blacklist | whitelist)));
@@ -176,12 +212,13 @@ end
 
 function test_nwscore(testCase)
     [folder, ~, ~] = fileparts(mfilename('fullpath'));
-    fastq = sprintf('%s/data/BulkDNA.fastq.gz', folder);
+    fastq = sprintf('%s/data/OriginalCARLIN/BulkDNA.fastq.gz', folder);
     cfg = parse_config_file('BulkDNA');
+    CARLIN_def = CARLIN_amplicon(parse_amplicon_file('OriginalCARLIN'));
     [SEQ, read_SEQ] = BulkFastQData.parse_bulk_fastq(fastq, cfg);
-    SEQ = FastQData.extract_CARLIN_from_sequences(SEQ, read_SEQ, cfg);
+    SEQ = FastQData.extract_CARLIN_from_sequences(SEQ, read_SEQ, cfg, CARLIN_def);
     
-    [sc_nw, al] = cellfun(@(x) nwalign(x, CARLIN_def.getInstance.seq.CARLIN, 'Alphabet', 'NT', 'GapOpen', 10, 'ExtendGap', 0.5), SEQ, 'un', false);
+    [sc_nw, al] = cellfun(@(x) nwalign(x, CARLIN_def.seq.CARLIN, 'Alphabet', 'NT', 'GapOpen', 10, 'ExtendGap', 0.5), SEQ, 'un', false);
     al = cellfun(@(x) CARLIN_def.desemble_sequence(x(1,:), x(3,:)), al, 'un', false);
     sc_re = cellfun(@(x) CARLIN_def.nwalign_score(x), al);
     

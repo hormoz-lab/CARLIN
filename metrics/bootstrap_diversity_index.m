@@ -1,6 +1,6 @@
 function [di_mu, di_sig, di_trial] = bootstrap_diversity_index(summary, N_trials)
     assert(isa(summary, 'ExperimentSummary'));
-    refseq = CARLIN_def.getInstance.seq.CARLIN;
+    refseq = summary.CARLIN_def.seq.CARLIN;
     is_template = ismember(cellfun(@(x) degap(x.get_seq), summary.alleles, 'un', false), refseq);
     N_total  = sum(summary.allele_freqs);
     N_alleles = size(summary.alleles,1);

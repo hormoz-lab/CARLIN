@@ -8,7 +8,7 @@ classdef AlignedSEQDepot < handle
     
     methods (Access = public)
         
-        function obj = AlignedSEQDepot(SEQ)
+        function obj = AlignedSEQDepot(SEQ, CARLIN_def)
             
             assert(~any(cellfun(@(x) any(x=='-'), SEQ)), 'No insertions should be present in sequences to align');
             
@@ -50,9 +50,9 @@ classdef AlignedSEQDepot < handle
             fprintf('...reduced sequence diversity from %d to %d\n', length(ind), length(obj.aligned_SEQ));
         end
         
-        function sanitize_conserved_regions(obj)
+        function sanitize_conserved_regions(obj, CARLIN_ref)
             fprintf('Sanitizing conserved regions of aligned sequences in depot\n');
-            v = AlignedSEQ.sanitize_conserved_regions(obj.aligned_SEQ);
+            v = AlignedSEQ.sanitize_conserved_regions(obj.aligned_SEQ, CARLIN_ref);
             [~, backtrack, ind] = unique(cellfun(@(x) degap(x.get_seq()), v, 'un', false));
             obj.aligned_SEQ = v(backtrack);
             obj.alignment_map = ind(obj.alignment_map);

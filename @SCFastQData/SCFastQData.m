@@ -17,9 +17,9 @@ classdef (Sealed=true) SCFastQData < FastQData
         
     methods (Access = public)
         
-        function obj = SCFastQData(fastq_file, cfg)
+        function obj = SCFastQData(fastq_file, cfg, CARLIN_def)
             
-            assert(nargin >= 2, 'Expected two inputs to SCFastQDat constructor');
+            assert(nargin == 3, 'Expected three inputs to SCFastQData constructor');
             
             assert(strcmp(cfg.type, 'SC'), 'Invalid CFG passed function');
             if(strcmp(cfg.SC.Platform, 'InDrops'))
@@ -31,7 +31,7 @@ classdef (Sealed=true) SCFastQData < FastQData
             end
             
             header_masks = SCFastQData.filter_sc_CBs_and_UMIs(cfg, CB, read_CB, UMI, read_UMI, QC);
-            [SEQ_trimmed, read_SEQ_trimmed, seq_masks, trim_loc] = FastQData.extract_CARLIN_from_sequences(SEQ, read_SEQ, cfg);
+            [SEQ_trimmed, read_SEQ_trimmed, seq_masks, trim_loc] = FastQData.extract_CARLIN_from_sequences(SEQ, read_SEQ, cfg, CARLIN_def);
             
             masks = merge_structs(header_masks, seq_masks);
             masks.valid_lines = intersect(header_masks.valid_provenance_structure, seq_masks.valid_SEQ_structure);

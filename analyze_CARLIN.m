@@ -2,25 +2,26 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 %analyze_CARLIN calls alleles from FASTQs sequencing the CARLIN amplicon. 
 %
 %   analyze_CARLIN(FASTQ_FILE, CFG_TYPE, OUTDIR) analyzes FASTQ_FILE 
-%   (*.fastq, *.fastq.gz) generated according to CFG_TYPE (one of 'BulkDNA', 
-%   'BulkRNA', 'scInDropsV2', 'scInDropsV3', 'sc10xV2', 'sc10xV3') and saves the 
+%   (*.fastq, *.fastq.gz) generated according to the experimental CARLIN
+%   protocol defined in CFG_TYPE (one of 'Sanger', 'BulkDNA', 'BulkRNA', 
+%   'scInDropsV2', 'scInDropsV3', 'sc10xV2', 'sc10xV3') and saves the 
 %   following files to OUTDIR:
 %
 %   Analysis.mat.gz - contains all variables including a compactified 
-%     representation of the FastQ files, a depot of unique aligned
+%     representation of the FASTQ files, a depot of unique aligned
 %     sequences, the collection of CBs and UMIs detected before and after 
 %     denoising, and the called alleles. This file may be large, and is not
-%     intended for use by a casual-user, rather to save state to do any
-%     custom one-off analysis.
+%     intended for use by a casual user. Rather, it stores all intermediate 
+%     variables for custom one-off analysis.
 %
-%   Summary.mat - contains a subset of the variables in Analysis.mat that 
-%     are usually sufficient for subsequent downstream analysis in MATLAB
+%   Summary.mat - contains the subset of variables in Analysis.mat that 
+%     is usually sufficient for subsequent downstream analysis 
 %     including a list of alleles, their frequencies, tags (UMIs or CBs) 
 %     reporting that allele, input parameters, thresholds used by the 
-%     algorithm - and, for SC runs - the reference barcode list.
+%     algorithm, and, for SC runs, the reference barcode list.
 %
-%   Alleles.png - Plot of sequence and distribution of alleles with
-%        summary statistics.
+%   Alleles.png - Plot of mutations harbored in each allele, distribution of 
+%     allele occurrence frequencies and summary statistics.
 %
 %   AlleleAnnotations.txt - Annotations describing each allele in plaintext
 %     format (HGVS) for use by other downstream tools.
@@ -38,6 +39,12 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 %   Log.txt - Running log of the pipeline.
 %
 %   The pipeline can optionally be invoked with some extra paramters:
+%
+%   analyze_CARLIN(..., 'CARLIN_amplicon', CARLIN_def) uses the nucleotide
+%   sequence and alignment parameters in 'CARLIN_def' to define the CARLIN
+%   amplicon and align reads against it. Defaults to 'OriginalCARLIN', which 
+%   corresponds to the amplicon used in the (Cell, 2020) paper. Can also 
+%   specify 'TigreCARLIN'. See *.json files in cfg/amplicon for full definitions. 
 %
 %   analyze_CARLIN(..., 'read_cutoff_UMI_denoised', cutoff) uses a minimum
 %   read threshold of 'cutoff' when attempting to call alleles from denoised 
@@ -79,7 +86,7 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 %
 %   analyze_CARLIN(..., 'ref_CB_file', file) uses the reference list of 
 %   cell barcodes in the file specified by 'ref_CB_file' when denoising 
-%   barcodes found in the FastQ files. The reference list should have one 
+%   barcodes found in the FASTQ files. The reference list should have one 
 %   cell barcode per line. Each cell barcode should be a string consisting 
 %   of only the characters {A,C,G,T}. The length of the barcode should match
 %   the length expected by the platform specified by CFG_TYPE. This reference
@@ -117,6 +124,7 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
 
     tic;
 
+    % Start logging
     diary([tempname '.txt']);
     diary on;
     fprintf('Writing log to temporary location: %s\n', get(0,'DiaryFile'));
@@ -127,47 +135,67 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
     parse(params, fastq_file, cfg_type, outdir, varargin{:});
     clear fastq_file cfg_type outdir varargin
         
-    % Setup directory and log file
+    % Setup directory
     if (~exist(params.Results.outdir, 'dir'))
         mkdir(params.Results.outdir);        
     end
 
+    % Setup CARLIN amplicon
+    CARLIN_def = CARLIN_amplicon(parse_amplicon_file(params.Results.CARLIN_amplicon));
+    
     % Make FQ representation
-    if (strcmp(cfg.type, 'Bulk'))    
-        FQ = BulkFastQData(params.Results.fastq_file, cfg);
+    if (strcmp(cfg.type, 'Bulk'))
+        FQ = BulkFastQData(params.Results.fastq_file, cfg, CARLIN_def);
     else
         ref_CBs = get_SC_ref_BCs(params.Results.ref_CB_file);
-        FQ = SCFastQData(params.Results.fastq_file, cfg);                         
+        FQ = SCFastQData(params.Results.fastq_file, cfg, CARLIN_def);                         
     end
 
+    if (isempty(FQ.get_SEQs()))
+        fprintf('ERROR: No reads survive filtering. Ensure that your CFG_TYPE and CARLIN_Amplicon settings are correct.\n');
+        fprintf('Saving intermediate results...\n');
+        try
+            save(sprintf('%s/Analysis.mat', params.Results.outdir));
+        catch
+            save(sprintf('%s/Analysis.mat', params.Results.outdir), '-v7.3', '-nocompression');
+        end        
+        gzip(sprintf('%s/Analysis.mat', params.Results.outdir));
+        delete(sprintf('%s/Analysis.mat', params.Results.outdir));        
+        fprintf('Pipeline ABORTED after %g seconds\n', toc);    
+        diary off;
+        copyfile(get(0,'DiaryFile'), [params.Results.outdir '/Log.txt']);
+        return;
+    end
+    
     % Align unique sequences
-    aligned = AlignedSEQDepot(FQ.get_SEQs());
+    aligned = AlignedSEQDepot(FQ.get_SEQs(), CARLIN_def);
     aligned.sanitize_prefix_postfix();
-    aligned.sanitize_conserved_regions();
+    aligned.sanitize_conserved_regions(CARLIN_def);
     
     % Make CB collection and call alleles
     if (strcmp(cfg.type, 'Bulk'))
         tag_collection = BulkUMICollection.FromFQ(FQ);
-        [tag_collection_denoised, tag_denoise_map] = tag_collection.denoise(aligned);
+        [tag_collection_denoised, tag_denoise_map] = tag_collection.denoise(CARLIN_def, aligned);
         thresholds = tag_collection_denoised.compute_thresholds(params, FQ);
-        tag_called_allele = tag_collection_denoised.call_alleles(thresholds.chosen, aligned);
-        summary = BulkExperimentReport(tag_collection_denoised, tag_denoise_map, tag_called_allele, FQ, thresholds);
+        tag_called_allele = tag_collection_denoised.call_alleles(CARLIN_def, aligned, thresholds.chosen);
+        summary = BulkExperimentReport.create(CARLIN_def, tag_collection_denoised, tag_denoise_map, tag_called_allele, FQ, thresholds);
     else        
         tag_collection = CBCollection.FromFQ(FQ);
         [tag_collection_denoised, tag_denoise_map] = tag_collection.denoise(ref_CBs);
         thresholds = tag_collection_denoised.compute_thresholds(params, FQ, length(ref_CBs));
-        tag_called_allele = tag_collection_denoised.call_alleles([thresholds.CB.chosen, thresholds.UMI.chosen], aligned);
-        summary = SCExperimentReport(tag_collection_denoised, tag_collection, tag_denoise_map, ...
-                                     tag_called_allele, FQ, thresholds, ref_CBs);
+        tag_called_allele = tag_collection_denoised.call_alleles(CARLIN_def, aligned, [thresholds.CB.chosen, thresholds.UMI.chosen]);
+        summary = SCExperimentReport.create(CARLIN_def, tag_collection_denoised, tag_collection, tag_denoise_map, ...
+                                            tag_called_allele, FQ, thresholds, ref_CBs);
     end
-    
-    fprintf('Saving results...%d/%d tags edited, %d alleles\n', ...
-        summary.N.eventful_tags, summary.N.called_tags, size(summary.alleles, 1));
-    
+   
     % Save just summary values needed for further analysis separately, so
     % they can be opened quickly. Full results saved later, can be big and
     % clunky to reopen for one-off analysis
-    if (strcmp(cfg.type, 'Bulk'))    
+    
+    fprintf('Saving results...%d/%d tags edited, %d alleles\n', ...
+        summary.N.eventful_tags, summary.N.called_tags, size(summary.alleles, 1));
+   
+    if (strcmp(cfg.type, 'Bulk'))
         save(sprintf('%s/Summary.mat', params.Results.outdir), 'summary', 'thresholds', 'params');
     else
         save(sprintf('%s/Summary.mat', params.Results.outdir), 'summary', 'thresholds', 'params', 'ref_CBs');
@@ -181,10 +209,16 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
     gzip(sprintf('%s/Analysis.mat', params.Results.outdir));
     delete(sprintf('%s/Analysis.mat', params.Results.outdir));
     
-    generate_text_output(summary, params, thresholds, params.Results.outdir);
+    % Generate outputs
     
-    fprintf('Generating allele plot\n');
+    if (strcmp(cfg.type, 'Bulk'))
+        generate_text_output(summary, params, thresholds, params.Results.outdir);
+    else
+        generate_text_output(summary, params, thresholds, params.Results.outdir, ...
+                             tag_collection, tag_collection_denoised, tag_denoise_map, tag_called_allele);
+    end
     
+    fprintf('Generating allele plot\n');    
     warning('off', 'MATLAB:hg:AutoSoftwareOpenGL');
     plot_summary(summary, params.Results.outdir);
     
@@ -200,7 +234,7 @@ function analyze_CARLIN(fastq_file, cfg_type, outdir, varargin)
                                   
     generate_warnings(summary, params, suspect_alleles, params.Results.outdir);
     
-    fprintf('Pipeline completed in %g seconds\n', toc);
+    fprintf('Pipeline COMPLETED in %g seconds\n', toc);
     
     diary off;
     copyfile(get(0,'DiaryFile'), [params.Results.outdir '/Log.txt']);

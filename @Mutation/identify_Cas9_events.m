@@ -1,9 +1,8 @@
-function event_list = identify_Cas9_events(aligned)
+function event_list = identify_cas9_events(CARLIN_def, aligned)
 
     assert(isa(aligned, 'AlignedSEQ'));
 
-    [mut_list, ~, seq, ref_seq, ref_mask] = Mutation.identify_sequence_events(aligned);
-    ref = CARLIN_def.getInstance;
+    [mut_list, ~, seq, ref_seq, ref_mask] = Mutation.identify_sequence_events(CARLIN_def, aligned);
     
     if (~isempty(mut_list))        
         compound = zeros(0,2);
@@ -12,8 +11,8 @@ function event_list = identify_Cas9_events(aligned)
         for i = 2:size(mut_list,1)        
             start_loc_bp = mut_list(i).loc_start;
             end_loc_bp   = mut_list(compound_end).loc_end;            
-            so_far_site = CARLIN_def.locate(ref, end_loc_bp , ref.bounds.ordered);
-            new_site    = CARLIN_def.locate(ref, start_loc_bp, ref.bounds.ordered);        
+            so_far_site = CARLIN_def.locate(end_loc_bp);
+            new_site    = CARLIN_def.locate(start_loc_bp);
             if ((start_loc_bp == end_loc_bp+1) || (new_site.abs == so_far_site.abs) || ...
                 (new_site.abs==so_far_site.abs+1 && strcmp(so_far_site.type, 'cutsites')) || ...
                 start_loc_bp < end_loc_bp)
@@ -35,7 +34,7 @@ function event_list = identify_Cas9_events(aligned)
                 if (event_list{i}.type == 'I')
                     if (event_list{i}.seq_new(1) ~= event_list{i}.seq_old(1) && ...
                         event_list{i}.seq_new(end) ~= event_list{i}.seq_old(end))
-                        event_list{i} = Mutation('C', event_list{i}.loc_start, event_list{i}.loc_end, event_list{i}.seq_new, event_list{i}.seq_old);
+                        event_list{i} = Mutation(CARLIN_def, 'C', event_list{i}.loc_start, event_list{i}.loc_end, event_list{i}.seq_new, event_list{i}.seq_old);
                     end
                 end
             else
@@ -69,13 +68,13 @@ function event_list = identify_Cas9_events(aligned)
                 end 
                 compound_ref_seq = ref_seq(ref_mask(ref_start_pos):ref_mask(ref_end_pos));
                 compound_in_seq = seq(seq_start_pos:seq_end_pos);
-                event_list{i} = Mutation.make_compound_mutation(ref_start_pos, ref_end_pos, compound_in_seq, compound_ref_seq);
+                event_list{i} = Mutation.make_compound_mutation(CARLIN_def, ref_start_pos, ref_end_pos, compound_in_seq, compound_ref_seq);
             end
         end
         
         event_list = vertcat(event_list{:});
         
-        mutated_allele = Mutation.apply_mutations(event_list);
+        mutated_allele = Mutation.apply_mutations(CARLIN_def, event_list);
 
         assert(isequal(degap(mutated_allele.get_seq), degap(seq)), '%s\n%s\n', degap(mutated_allele.get_seq), degap(seq));
         assert(isequal(degap(mutated_allele.get_ref), degap(ref_seq)));

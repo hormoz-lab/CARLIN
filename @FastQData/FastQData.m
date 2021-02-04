@@ -26,7 +26,7 @@ classdef (Abstract=true) FastQData < handle
         % Trim CARLIN from read
         [SEQ, QC] = orient_reads(cfg, SEQ, QC)
         [valid_mask, ind] = trim_at_scrutiny_level(level, SEQ, trim_SEQ, which_end, offset, thresh);
-        [SEQ_trimmed, read_SEQ_trimmed, masks, trim_loc] = extract_CARLIN_from_sequences(SEQ_raw, read_SEQ_raw, cfg);
+        [SEQ_trimmed, read_SEQ_trimmed, masks, trim_loc] = extract_CARLIN_from_sequences(SEQ_raw, read_SEQ_raw, cfg, CARLIN_def);
         
     end
     

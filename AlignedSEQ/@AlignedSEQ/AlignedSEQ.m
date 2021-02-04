@@ -7,8 +7,7 @@ classdef AlignedSEQ
     methods (Access = public)
         
         function obj = AlignedSEQ(seq_segments, ref_segments)
-            assert(length(seq_segments) == length(ref_segments));
-            assert(length(seq_segments) == CARLIN_def.getInstance.N.motifs);
+            assert(length(seq_segments) == length(ref_segments));            
             obj.motifs = cellfun(@(s,r) AlignedSEQMotif(s, r), seq_segments, ref_segments, 'un', false);
             obj.motifs = vertcat(obj.motifs{:});
         end
@@ -28,7 +27,7 @@ classdef AlignedSEQ
     end
     
     methods (Static)
-        out = sanitize_conserved_regions(in);
+        out = sanitize_conserved_regions(in, CARLIN_def);
         out = sanitize_prefix_postfix(in);
     end
 end

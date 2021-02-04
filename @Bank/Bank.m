@@ -97,7 +97,7 @@ classdef Bank
             % 2. Compute extensive and intensive Poisson rates for observed
             % alleles
 
-            is = strcmp(cellfun(@(x) degap(x.get_seq), obj.summary.alleles, 'un', false), CARLIN_def.getInstance.seq.CARLIN);
+            is = strcmp(cellfun(@(x) degap(x.get_seq), obj.summary.alleles, 'un', false), obj.summary.CARLIN_def.seq.CARLIN);
             model.transcripts.edited = sum(obj.summary.allele_freqs(~is));
             model.extensive.rates = obj.summary.allele_freqs;
             model.intensive.rates = model.extensive.rates / model.transcripts.edited;
@@ -332,15 +332,18 @@ classdef Bank
             if (numel(varargin) == 1)
                 summary = varargin{1};
                 assert(isa(summary, 'ExperimentSummary'));
+                assert(isequal(summary.CARLIN_def, obj.summary.CARLIN_def), 'CARLIN amplicon used to create bank different than alleles being tested');
                 alleles_to_test = summary.alleles;
             elseif (numel(varargin) == 2)
                 alleles_to_test = varargin{1};
                 Nobs = varargin{2};
+                ref = unique(cellfun(@(x) degap(x.get_ref), alleles_to_test, 'un', false));
+                assert(length(ref)==1 && isequal(CARLIN_def.seq.CARLIN, ref{1}), 'CARLIN amplicon used to create bank different than alleles being tested');
             else
                 error('Unrecognized arguments when calling allele confidence');
             end            
             
-            template_ind = strcmp(cellfun(@(x) degap(x.get_seq), alleles_to_test, 'un', false), CARLIN_def.getInstance.seq.CARLIN);
+            template_ind = strcmp(cellfun(@(x) degap(x.get_seq), alleles_to_test, 'un', false), obj.summary.CARLIN_def.seq.CARLIN);
             
             [is, where] = ismember(cellfun(@(x) degap(x.get_seq), alleles_to_test, 'un', false), ...
                                    cellfun(@(x) degap(x.get_seq), obj.summary.alleles, 'un', false));
@@ -364,16 +367,19 @@ classdef Bank
              if (numel(varargin) == 1)
                 summary = varargin{1};
                 assert(isa(summary, 'ExperimentSummary'));
+                assert(isequal(summary.CARLIN_def, obj.summary.CARLIN_def), 'CARLIN amplicon used to create bank different than alleles being tested');
                 alleles_to_test = summary.alleles;
                 allele_freqs = summary.allele_freqs;
             elseif (numel(varargin) == 2)
                 alleles_to_test = varargin{1};
-                allele_freqs = varargin{2};
+                allele_freqs = varargin{2};                
+                ref = unique(cellfun(@(x) degap(x.get_ref), alleles_to_test, 'un', false));
+                assert(length(ref)==1 && isequal(CARLIN_def.seq.CARLIN, ref{1}), 'CARLIN amplicon used to create bank different than alleles being tested');
             else
                 error('Unrecognized arguments when calling allele confidence');
             end            
-            
-            template_ind = strcmp(cellfun(@(x) degap(x.get_seq), alleles_to_test, 'un', false), CARLIN_def.getInstance.seq.CARLIN);
+             
+            template_ind = strcmp(cellfun(@(x) degap(x.get_seq), alleles_to_test, 'un', false), obj.summary.CARLIN_def.seq.CARLIN);
             
             [is, where] = ismember(cellfun(@(x) degap(x.get_seq), alleles_to_test, 'un', false), ...
                                    cellfun(@(x) degap(x.get_seq), obj.summary.alleles, 'un', false));

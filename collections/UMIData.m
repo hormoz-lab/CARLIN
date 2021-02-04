@@ -17,7 +17,7 @@ classdef UMIData < CallableCollection
             obj.SEQ_weight = SEQ_weight;
         end
         
-        function call_result = call_alleles(obj, depth, aligned)
+        function call_result = call_alleles(obj, CARLIN_def, aligned, depth)
             
             assert(isscalar(depth) && depth > 0);
             call_result.allele = [];
@@ -28,7 +28,7 @@ classdef UMIData < CallableCollection
                 assert(isa(aligned, 'AlignedSEQDepot'));                    
                 aligned_SEQ = arrayfun(@(x) aligned.get_alignment_for_SEQ_ind(x), obj.SEQ_ind, 'un', false);                                
                 [call_result.allele, call_result.constituents, weight_contribution] ...
-                    = CallableCollection.call_alleles_coarse_grain(aligned_SEQ, obj.SEQ_weight, true);
+                    = CallableCollection.call_alleles_coarse_grain(CARLIN_def, aligned_SEQ, obj.SEQ_weight, true);
                 
                 if (~isempty(call_result.allele))
                     

@@ -44,15 +44,15 @@ function [sp, breakdown] = plot_site_decomposition(summary, show_legend, title_s
                  sprintf('Intrasite\nDeletion');
                  'Unedited'};
     
-    breakdown = zeros(CARLIN_def.getInstance.N.segments, length(mut_types));    
+    breakdown = zeros(summary.CARLIN_def.N.segments, length(mut_types));    
     
-    mut_events = cellfun(@(x) Mutation.identify_Cas9_events(x), summary.alleles, 'un', false);
+    mut_events = cellfun(@(x) Mutation.identify_cas9_events(summary.CARLIN_def, x), summary.alleles, 'un', false);
     
     for i = 1:size(summary.alleles,1)
         allele_breakdown = false(size(breakdown));
         if (~isempty(mut_events{i}))
-            start_site = arrayfun(@(i) CARLIN_def.coarse_grain_motif(CARLIN_def.find_motif_from_bp(i)), vertcat(mut_events{i}.loc_start));
-            end_site   = arrayfun(@(i) CARLIN_def.coarse_grain_motif(CARLIN_def.find_motif_from_bp(i)), vertcat(mut_events{i}.loc_end  ));
+            start_site = arrayfun(@(i) summary.CARLIN_def.coarse_grain_motif(summary.CARLIN_def.find_motif_from_bp(i)), vertcat(mut_events{i}.loc_start));
+            end_site   = arrayfun(@(i) summary.CARLIN_def.coarse_grain_motif(summary.CARLIN_def.find_motif_from_bp(i)), vertcat(mut_events{i}.loc_end  ));
             mut_type   = vertcat(mut_events{i}.type);
 
             % This plot relies on a single event happening at a site, which
@@ -101,32 +101,35 @@ function [sp, breakdown] = plot_site_decomposition(summary, show_legend, title_s
     end
     
     assert(all(sum(breakdown,2) == sum(summary.allele_freqs)));
-    
-    % Purple - indel
-    % Red    - deletion
-    % Blue   - insertion
+
+    c = [(CARLIN_viz.color('D')+CARLIN_viz.color('I'))/255/2;
+          CARLIN_viz.color('D')/255;
+         (CARLIN_viz.color('D')+CARLIN_viz.color('I'))/255/2;
+          CARLIN_viz.color('I')/255;
+          CARLIN_viz.color('D')/255;
+         [0.9 0.9 0.9]];
+
     % Alpha1 - intersite
     % Alpha<1 - intrasite
-    
-    c = [0.5 0 0.5; 1 0 0; 0.5 0 0.5; 0 0 1; 1 0 0; 0.9 0.9 0.9];
-    alphaval = [1 1 0.6 1 0.4 1];
-    
+        
+    alphaval = [1 1 1-CARLIN_viz.alpha.overlay 1 CARLIN_viz.alpha.overlay 1];
+
     % Visually looks nicer if compound, deletion and insertion grouped
     % together
     
     reorder = [1 3 4 2 5 6];
     
-    h = bar([1:CARLIN_def.getInstance.N.segments]', breakdown(:,reorder), 'stacked', 'BarWidth', 0.9);
+    h = bar([1:summary.CARLIN_def.N.segments]', breakdown(:,reorder), 'stacked', 'BarWidth', 0.9);
     for i = 1:length(mut_types)
         h(i).FaceColor = c(reorder(i),:);
         h(i).FaceAlpha = alphaval(reorder(i));
     end
     
     axis tight;
-    xlim([0.5, CARLIN_def.getInstance.N.segments+0.5]);
+    xlim([0.5, summary.CARLIN_def.N.segments+0.5]);
     box off;
     
-    set(gca, 'xtick', [1:CARLIN_def.getInstance.N.segments], 'xticklabel', num2str([1:CARLIN_def.getInstance.N.segments]'));
+    set(gca, 'xtick', [1:summary.CARLIN_def.N.segments], 'xticklabel', num2str([1:summary.CARLIN_def.N.segments]'));
     set(get(gca, 'XAxis'), 'FontSize', 5);
     xlabel('CARLIN Target Site', 'FontSize', 6);
     

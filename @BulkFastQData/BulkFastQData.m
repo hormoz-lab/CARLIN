@@ -3,16 +3,16 @@ classdef (Sealed=true) BulkFastQData < FastQData
     methods (Static)
         
         [SEQ, read_SEQ, QC, Nreads] = parse_bulk_fastq(fastq_file, cfg);
-        [UMI, read_UMI, SEQ, read_SEQ, QC, trim_loc] = parse_bulk_lines(SEQ, read_SEQ, QC, cfg, trim_loc);
+        [UMI, read_UMI, SEQ, read_SEQ, QC, trim_loc] = parse_bulk_lines(SEQ, read_SEQ, QC, cfg, trim_loc, CARLIN_def);
         masks = filter_bulk_UMIs(UMI, read_UMI, QC, L)            
          
     end 
         
     methods (Access = public)
     
-        function obj = BulkFastQData(fastq_file, cfg)
+        function obj = BulkFastQData(fastq_file, cfg, CARLIN_def)
             
-            assert(nargin == 2, 'Expected two inputs to BulkFastQData constructor');
+            assert(nargin == 3, 'Expected three inputs to BulkFastQData constructor');
             
             % Logical flow is a little convoluted because UMIs and CARLIN are part of the 
             % same read and we still want to get good diagnostics out
@@ -23,14 +23,14 @@ classdef (Sealed=true) BulkFastQData < FastQData
             
             % 2. Trim out CARLIN based on Primer5 and Primer3 settings. 
             
-            [SEQ_trimmed, read_SEQ_trimmed, seq_masks, trim_loc] = FastQData.extract_CARLIN_from_sequences(SEQ, read_SEQ, cfg);
+            [SEQ_trimmed, read_SEQ_trimmed, seq_masks, trim_loc] = FastQData.extract_CARLIN_from_sequences(SEQ, read_SEQ, cfg, CARLIN_def);
             
             % 3. What's left over after trimming (specified by trim_loc) is
             % used to get UMIs. Reconstitute 'raw' SEQ by keeping what's
             % left of the original read after excising UMIs. trim_loc
             % indexes this new SEQ_raw after trimming for UMIs
             
-            [UMI, read_UMI, SEQ, read_SEQ, QC, trim_loc] = BulkFastQData.parse_bulk_lines(SEQ, read_SEQ, QC, cfg, trim_loc);
+            [UMI, read_UMI, SEQ, read_SEQ, QC, trim_loc] = BulkFastQData.parse_bulk_lines(SEQ, read_SEQ, QC, cfg, trim_loc, CARLIN_def);
             
             header_masks = BulkFastQData.filter_bulk_UMIs(UMI, read_UMI, QC, cfg.UMI.length);
                                                

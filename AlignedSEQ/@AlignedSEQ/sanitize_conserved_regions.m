@@ -1,4 +1,4 @@
-function aligned_seqs = sanitize_conserved_regions(aligned_seqs)
+function aligned_seqs = sanitize_conserved_regions(aligned_seqs, CARLIN_def)
 
     is_obj = false;
     if (isa(aligned_seqs, 'AlignedSEQ'))
@@ -11,11 +11,10 @@ function aligned_seqs = sanitize_conserved_regions(aligned_seqs)
     L_start = cellfun(@(x) length(x.get_seq()), aligned_seqs);
     
     seq_events = cellfun(@(x) x.get_event_structure(), aligned_seqs, 'un', false);
-    seq_events = vertcat(seq_events{:});
-    ref = CARLIN_def.getInstance;
+    seq_events = vertcat(seq_events{:});    
 
-    motif_candidate = true(1, ref.N.motifs);
-    motif_candidate(ref.motifs.cutsites) = false;    
+    motif_candidate = true(1, CARLIN_def.N.motifs);
+    motif_candidate(CARLIN_def.motifs.cutsites) = false;    
     
     motifs_to_clean = (seq_events == 'M') & motif_candidate;
     seqs_to_clean = any(motifs_to_clean,2);

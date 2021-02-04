@@ -62,7 +62,7 @@ classdef (Sealed) plot_stargate < handle
 
             assert(isa(summary, 'ExperimentSummary'));
 
-            ref = CARLIN_def.getInstance;
+            ref = summary.CARLIN_def;
             N_motifs = ref.N.motifs;
 
             spacer_angle = plot_stargate.spacer_angle_deg;
@@ -74,14 +74,14 @@ classdef (Sealed) plot_stargate < handle
             val = num2cell(const_offset+ref.bounds.ordered(:,2)+linspace(0,spacer_angle*(N_motifs-1), N_motifs)');    
             [plot_params(1:N_motifs).e] = val{:};
 
-            plot_params(ref.motifs.prefix).alpha    = ref.alpha.prefix;
-            plot_params(ref.motifs.postfix).alpha  = ref.alpha.postfix;
+            plot_params(ref.motifs.prefix).alpha   = CARLIN_viz.alpha.prefix;
+            plot_params(ref.motifs.postfix).alpha  = CARLIN_viz.alpha.postfix;
 
-            val = repmat({ref.alpha.consite}, 10, 1);
+            val = repmat({CARLIN_viz.alpha.consite}, ref.N.segments, 1);
             [plot_params(ref.motifs.consites).alpha] = val{:};    
-            val = repmat({ref.alpha.cutsite}, 10, 1);
+            val = repmat({CARLIN_viz.alpha.cutsite}, ref.N.segments, 1);
             [plot_params(ref.motifs.cutsites).alpha] = val{:};        
-            val = repmat({ref.alpha.pam}, 9, 1);
+            val = repmat({CARLIN_viz.alpha.pam}, ref.N.pams, 1);
             [plot_params(ref.motifs.pams).alpha]     = val{:};
 
             indmap = arrayfun(@(i) plot_params(i).s:plot_params(i).e, 1:N_motifs, 'un', false);
@@ -114,7 +114,7 @@ classdef (Sealed) plot_stargate < handle
             del_matrix = zeros(ref.width.CARLIN, ref.width.CARLIN);
             ins_matrix = zeros(ref.width.CARLIN, ref.width.CARLIN);
             for i = 1:size(summary.alleles,1)
-                mut_events = Mutation.identify_Cas9_events(summary.alleles{i});
+                mut_events = Mutation.identify_cas9_events(summary.CARLIN_def, summary.alleles{i});
                 for j = 1:length(mut_events)
                     if (mut_events(j).type=='D' || mut_events(j).type=='C' || mut_events(j).type=='M')
                         del_matrix(mut_events(j).loc_start, mut_events(j).loc_end) = ...
@@ -181,21 +181,21 @@ classdef (Sealed) plot_stargate < handle
                             assert(abs(u_inc(1)-u(end)) < 1e-5 && abs(v_inc(1)-v(end)) < 1e-5);
                         end
                         if (i <= N_del)
-                            patch([u; u_inc(2:end-1)], [v; v_inc(2:end-1)], 'red', 'EdgeColor', 'none', 'FaceAlpha', 0.005);
+                            patch([u; u_inc(2:end-1)], [v; v_inc(2:end-1)], CARLIN_viz.color('D')/255, 'EdgeColor', 'none', 'FaceAlpha', 0.005);
                         end
                     end
                     if (i <= N_del)
-                        plot(u, v, '-', 'LineWidth', width(i), 'Color', 'r'); 
+                        plot(u, v, '-', 'LineWidth', width(i), 'Color', CARLIN_viz.color('D')/255); 
                     else
-                        plot(u, v, '-', 'LineWidth', width(i), 'Color', 'b'); 
+                        plot(u, v, '-', 'LineWidth', width(i), 'Color', CARLIN_viz.color('I')/255); 
                     end
                 else
                     u = cosd(indmap(r(i)));
                     v = sind(indmap(r(i)));
                     if (i <= N_del)
-                        scatter(u, v, width(i), 'r', 'filled', 'Marker', 'o'); 
+                        scatter(u, v, width(i), CARLIN_viz.color('D'), 'filled', 'Marker', 'o'); 
                     else
-                        scatter(u, v, width(i), 'b', 'filled', 'Marker', 'o'); 
+                        scatter(u, v, width(i), CARLIN_viz.color('I'), 'filled', 'Marker', 'o'); 
                     end
                 end
             end

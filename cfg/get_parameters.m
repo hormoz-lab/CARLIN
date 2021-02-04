@@ -11,8 +11,9 @@ function params = get_parameters(cfg)
     addRequired(params,'cfg_type');
     addRequired(params,'outdir');
     
-    addParameter(params,'read_cutoff_UMI_denoised',10);
-    addParameter(params,'read_override_UMI_denoised', NaN);
+    addParameter(params, 'CARLIN_amplicon', 'OriginalCARLIN');
+    addParameter(params, 'read_cutoff_UMI_denoised',10);
+    addParameter(params, 'read_override_UMI_denoised', NaN);
     
     if (strcmp(cfg.type, 'SC'))
         
@@ -22,17 +23,17 @@ function params = get_parameters(cfg)
         
         if (strcmp(cfg.SC.Platform, 'InDrops'))            
             if (cfg.SC.Version==2)
-                addParameter(params, 'ref_CB_file', sprintf('%s/InDropsV2_barcodes.txt.gz', folder));
+                addParameter(params, 'ref_CB_file', sprintf('%s/CBs/InDropsV2_barcodes.txt.gz', folder));
             elseif (cfg.SC.Version==3)
-                addParameter(params, 'ref_CB_file', sprintf('%s/InDropsV3_barcodes.txt.gz', folder));
+                addParameter(params, 'ref_CB_file', sprintf('%s/CBs/InDropsV3_barcodes.txt.gz', folder));
             else
                 error('Unsupported InDrops version');
             end
         elseif (strcmp(cfg.SC.Platform, '10x'))
             if (cfg.SC.Version==2)
-                addParameter(params, 'ref_CB_file', sprintf('%s/10xV2_barcodes.txt.gz', folder));            
+                addParameter(params, 'ref_CB_file', sprintf('%s/CBs/10xV2_barcodes.txt.gz', folder));            
             elseif (cfg.SC.Version==3)
-                addParameter(params, 'ref_CB_file', sprintf('%s/10xV3_barcodes.txt.gz', folder));
+                addParameter(params, 'ref_CB_file', sprintf('%s/CBs/10xV3_barcodes.txt.gz', folder));
             else
                 error('Unsupported 10x version');
             end

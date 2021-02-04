@@ -1,9 +1,9 @@
-function modified_sites = find_modified_sites(in)
+function modified_sites = find_modified_sites(CARLIN_def, in)
 
     assert(isa(in, 'AlignedSEQ'));
 
     modified_sites = [];
-    event_list = Mutation.identify_Cas9_events(in);
+    event_list = Mutation.identify_cas9_events(CARLIN_def, in);
     
     if (~isempty(event_list))
         s_motif = arrayfun(@(i) CARLIN_def.coarse_grain_motif(CARLIN_def.find_motif_from_bp(i)), vertcat(event_list.loc_start));

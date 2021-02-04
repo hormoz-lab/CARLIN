@@ -12,7 +12,7 @@ classdef CBData < TaggedCollection & CallableCollection
              obj.UMIs = UMI_data;
          end
         
-        function call_result = call_alleles(obj, depth, aligned)
+        function call_result = call_alleles(obj, CARLIN_def, aligned, depth)
             
             assert(isequal(size(depth), [1, 2]) && all(depth > 0) && (depth(1) >= depth(2)));
             call_result = [];
@@ -23,12 +23,12 @@ classdef CBData < TaggedCollection & CallableCollection
                     assert(isa(aligned, 'AlignedSEQDepot'));
                     call_result.umi_call_result = cell(size(obj.UMIs,1),1);
                     for i = 1:size(obj.UMIs,1)
-                        call_result.umi_call_result{i} = obj.UMIs(i).call_alleles(depth(2), aligned);
+                        call_result.umi_call_result{i} = obj.UMIs(i).call_alleles(CARLIN_def, aligned, depth(2));
                     end
                     call_result.umi_call_result = vertcat(call_result.umi_call_result{:});
                     [call_result.umi_call_result.UMI] = obj.UMIs.UMI;
                     [call_result.allele, call_result.constituents] = ...
-                        CallableCollection.call_alleles_coarse_grain({call_result.umi_call_result(:).allele}');
+                        CallableCollection.call_alleles_coarse_grain(CARLIN_def, {call_result.umi_call_result(:).allele}');
                 end
             end
         end
