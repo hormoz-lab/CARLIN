@@ -15,7 +15,7 @@ function ref_BCs = get_SC_ref_BCs(barcode_file)
     
     fid = fopen(barcode_file);
     assert(fid ~= -1, 'Failed to open CB reference file: %s', barcode_file);    
-    ref_BCs = textscan(fid, '%s');
+    ref_BCs = textscan(fid, '%s', 'Delimiter', {',', '\t', ' '}, 'MultipleDelimsAsOne', true);
     fclose(fid);
     
     if (strcmp(ext, '.gz'))
