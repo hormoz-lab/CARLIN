@@ -488,7 +488,7 @@ A 2D array specifying the opening/closing penalty for conserved sites/cutsites i
 
 Specify the opening insertion penalty. See Methods and Supplementary Table 2 of (Cell, 2020).
 
-Each `ExperimentSummary` object contains a `CARLIN_def` field that stores information about the `CARLIN_amplicon` used when running the pipeline. You can only merge `ExperimentSummary` objects if they have the same `CARLIN_amplicon` saved in their respective `CARLIN_def` fields. Additionally, you and can only assess statistical significance of alleles in an `ExperimentSummary` object against a `Bank` created using `ExperimentSummary` objects with the same `CARLIN_def`. Otherwise, all other features in the pipeline are agnostic to the specifics of the CARLIN amplicon.
+Each `ExperimentSummary` object contains a `CARLIN_def` field that stores information about the `CARLIN_amplicon` used when running the pipeline. You can only merge `ExperimentSummary` objects if they have the same `CARLIN_amplicon` saved in their respective `CARLIN_def` fields. Additionally, you can only assess statistical significance of alleles in an `ExperimentSummary` object against a `Bank` created using `ExperimentSummary` objects with the same `CARLIN_def`. Otherwise, all other features in the pipeline are agnostic to the specifics of the CARLIN amplicon.
 
 ## Troubleshooting
 
