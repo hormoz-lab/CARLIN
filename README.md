@@ -290,7 +290,7 @@ The output in each case is a vector with elements corresponding to the alleles i
 
 ## Create a Custom Bank
 
-To create a custom bank characterizing the null distribution of allele frequencies for your own protocol, [download CatchAll](http://www.northeastern.edu/catchall/downloads.html) and copy the full path (including binary name) into:
+To create a custom bank characterizing the null distribution of allele frequencies for your own protocol, put `CatchAllCmdW` executable file into a desired directory and copy the full path (including the file name) into:
 
 	CODE_PATH/@Bank/CatchAllPath.txt
 
@@ -302,6 +302,8 @@ Run the following code to create a `Bank` object by pooling three libraries (sav
 >> mouse3 = load('Mouse3/Summary.mat');
 >> bank = Bank.Create([mouse1.summary; mouse2.summary; mouse3.summary], {'Mouse1'; 'Mouse2'; 'Mouse3'}, 'MyCustomBank');
 ```
+
+The CatchAll code runs only on Windows. You can use Windows emulators such as [VirtualBox](https://www.virtualbox.org) or [Wine](https://www.winehq.org) to run it on non-Windows machine. 
 
 ## Work with Mutations
 
