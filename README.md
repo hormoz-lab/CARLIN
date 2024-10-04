@@ -12,14 +12,14 @@ S. Hormoz, F. D. Camargo. "An Engineered CRISPR-Cas9 Mouse Line for
 Simultaneous Readout of Lineage Histories and Gene Expression Profiles 
 in Single Cells." Cell (2020), https://doi.org/10.1016/j.cell.2020.04.048
 
-To reproduce all the results and figures from the paper, please [visit the paper repository](https://gitlab.com/hormozlab/Cell_2020_carlin).
+To reproduce all the results and figures from the paper, please [visit the paper repository](https://github.com/hormoz-lab/Cell-2020-CARLIN).
 
 ## Download
 
 To download the pipeline into the directory given by CODE_PATH:
 
 ```bash
-$ git clone https://gitlab.com/hormozlab/carlin.git CODE_PATH
+$ git clone https://github.com/hormoz-lab/CARLIN.git CODE_PATH
 ```
 
 ## Installation
@@ -399,7 +399,7 @@ The pipeline expects configuration files to have the following fields:
 
 * type : {"Bulk", "SC"}
 
-Are the FASTQs from "Bulk" experiments, in which reads are only tagged with UMIs, or from "SC" experiments, in which reads are also associated with CBs? If type="Bulk", the input FASTQ should contain paired-end reads, and the UMI should always be immediately 5' or 3' of the amplicon sequence (see UMI.location and read_perspective below). If type="SC", the software expects FASTQs in the exact format produced by either the CellRanger (10x) or [CARLIN_InDrops](https://gitlab.com/hormozlab/indrops) pipeline.
+Are the FASTQs from "Bulk" experiments, in which reads are only tagged with UMIs, or from "SC" experiments, in which reads are also associated with CBs? If type="Bulk", the input FASTQ should contain paired-end reads, and the UMI should always be immediately 5' or 3' of the amplicon sequence (see UMI.location and read_perspective below). If type="SC", the software expects FASTQs in the exact format produced by either the CellRanger (10x) or [CARLIN_InDrops](https://github.com/hormoz-lab/CARLIN-indrops) pipeline.
 
 * SC.Platform : {"10x", "InDrops"}
 * SC.Version : {2, 3}
@@ -501,6 +501,6 @@ If you're running into issues, check if the CARLIN pipeline runs properly on tes
 >> runtests;
 ```
 
-There are also examples in `tests/CARLIN_pipeline_test.m` to check if your invocation is correct. For other examples of how the code is used, please [visit the paper repository](https://gitlab.com/hormozlab/Cell_2020_carlin).
+There are also examples in `tests/CARLIN_pipeline_test.m` to check if your invocation is correct. For other examples of how the code is used, please [visit the paper repository](https://.com/hormozlab/Cell_2020_carlin).
 
 #### Prepared By: Duluxan Sritharan
